@@ -1,1 +1,4 @@
 diabetic metmabolic simulator
+
+ts-node --skip-project ./scripts/fiasp
+ts-node --skip-project ./scripts/fiasp
