@@ -13,8 +13,6 @@ const Plot = dynamic(
 )
 
 
-
-
 import data from '../../data/glucose.json'
 
 
@@ -22,14 +20,21 @@ function convertFromMgToMmol(v) {
     return v / 18.
 }
 
+function formatPlotlyDate(dateObj) {
+    let date, time
+    let str = dateObj.toJSON().split('T')
+    date = str[0]
+    time = str[1].substring(0,5)
+    return `${date} ${time}`
+}
 
-
-const Graph = () => {
+function getData() {
     // convert glucose data to x,y
     const observed = data.map((record, i) => {
         // x
         let date = new Date(record.date)
-        const x = i
+        // const x = i
+        const x = formatPlotlyDate(date)
 
         // y
         let bgl = convertFromMgToMmol(record.sgv)
@@ -40,11 +45,19 @@ const Graph = () => {
 
     const predicted = observed.map(record => {
         return [
-            record[0] + Math.random(),
+            record[0],
             record[1] + Math.random()
         ]
     })
 
+    return {
+        observed,
+        predicted
+    }
+}
+
+const Graph = () => {
+    const { observed, predicted } = getData()
     return <>
         <Plot
             data={[
@@ -70,8 +83,6 @@ const Graph = () => {
 }
 
 export default () => {
-    let [rendered, setRendered] = useState(false)
-
     return <div>
         <Graph />
     </div>
