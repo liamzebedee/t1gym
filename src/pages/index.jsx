@@ -38,15 +38,25 @@ function toPlotlyFormat(data) {
         const x = formatPlotlyDate(date)
 
         // y
-        let bgl = convertFromMgToMmol(record.sgv)
-        const y = bgl
+        const y = record.sgv
 
         return [x,y]
     })
 }
 
+function convertData(d) {
+    return d
+        .map(d => {
+            return {
+                ...d,
+                sgv: convertFromMgToMmol(d.sgv)
+            }
+        })
+        .reverse()
+}
+
 function getData() {
-    let observed = data
+    let observed = convertData(data)
     let predicted = Model.simulate(observed)
 
     return {
