@@ -14,6 +14,7 @@ const Plot = dynamic(
 
 
 import data from '../../data/glucose.json'
+import { Model } from '../model';
 
 
 function convertFromMgToMmol(v) {
@@ -28,9 +29,9 @@ function formatPlotlyDate(dateObj) {
     return `${date} ${time}`
 }
 
-function getData() {
+function toPlotlyFormat(data) {
     // convert glucose data to x,y
-    const observed = data.map((record, i) => {
+    return data.map((record, i) => {
         // x
         let date = new Date(record.date)
         // const x = i
@@ -42,19 +43,18 @@ function getData() {
 
         return [x,y]
     })
+}
 
-    const predicted = observed.map(record => {
-        return [
-            record[0],
-            record[1] + Math.random()
-        ]
-    })
+function getData() {
+    let observed = data
+    let predicted = Model.simulate(observed)
 
     return {
-        observed,
-        predicted
+        observed: toPlotlyFormat(observed),
+        predicted: toPlotlyFormat(predicted)
     }
 }
+
 
 const Graph = () => {
     const { observed, predicted } = getData()
@@ -78,7 +78,15 @@ const Graph = () => {
                     marker: { color: 'blue' },
                 }
             ]}
-            layout={{ width: 1024, height: 720, title: 'Blood glucose' }} />
+            layout={{ 
+                width: 1024, 
+                height: 720, 
+                title: 'Blood glucose',
+                xaxis: {
+                    autorange: true,
+                },
+                yaxis: {range: [1, 20]},
+            }} />
     </>
 }
 
