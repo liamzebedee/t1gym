@@ -14,7 +14,7 @@ const Plot = dynamic(
 
 
 import data from '../../data/glucose.json'
-import { functions, Model, exerciseEffect, MINUTE, HOUR } from '../model';
+import { functions, Model, exerciseEffect, MINUTE, HOUR, compose } from '../model';
 
 
 function convertFromMgToMmol(v) {
@@ -84,7 +84,6 @@ const FunctionPlot = ({ fn, duration, id, title }) => {
         xv.push(x/HOUR)
         yv.push(fn(x))
     }
-    console.log(xv, yv)
 
     return <>
         <Plot
@@ -154,10 +153,20 @@ const Graph = () => {
                 annotations,
             }} />
         
+        <FunctionPlot title="Testing" id='testing' fn={
+            compose(
+                functions.exercise(0.8),
+                functions.window({
+                    start: 50*MINUTE,
+                    duration: 20*MINUTE
+                })
+            )
+        } duration={2*HOUR}/>
+
         <FunctionPlot title="Exercise" id='exercise' fn={functions.exercise(1)} duration={2*HOUR}/>
-        <FunctionPlot title="Fiasp insulin" id='insulin' fn={functions.fiaspInsulin(1)} duration={5*HOUR}/>
-        <FunctionPlot title="Food (30g - Carbs)" id='insulin' fn={functions.food('carbs', 15, 0.8)} duration={7*HOUR}/>
-        <FunctionPlot title="Food (30g - Protein)" id='insulin' fn={functions.food('protein', 30)} duration={7*HOUR}/>
+        <FunctionPlot title="Fiasp insulin active" id='insulin' fn={functions.fiaspInsulinActive(1)} duration={7*HOUR}/>
+        <FunctionPlot title="Food digestion (30g - Carbs)" id='insulin' fn={functions.foodDigestion('carbs', 15, 0.8)} duration={7*HOUR}/>
+        <FunctionPlot title="Food digestion (30g - Protein)" id='insulin' fn={functions.foodDigestion('protein', 30)} duration={7*HOUR}/>
     </>
 }
 
