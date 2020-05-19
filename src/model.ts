@@ -164,11 +164,12 @@ const ExerciseIntensity = {
     Core: 0.4,
 }
 
-const BURN_RATE_PER_10MINS = (-6 * 60*MINUTE) / 6
+const BURN_RATE = (-6 / (60*MINUTE))
+
 export const functions = {
     exercise(intensity) {
         return u => 
-            (intensity) * (u/BURN_RATE_PER_10MINS)
+            (intensity) * (u*BURN_RATE)
     },
 
     fiaspInsulin(amount) {
@@ -208,7 +209,7 @@ export const functions = {
 export function exerciseEffect({ start, duration, intensity }) {
     // `u` denotes relative time
     const F = (u) => {
-        return (intensity * BURN_RATE_PER_10MINS) * (u/duration)
+        return (intensity * BURN_RATE) * (u/duration)
     }
 
     return window({
