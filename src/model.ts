@@ -172,14 +172,18 @@ export const functions = {
             (intensity) * (u*BURN_RATE)
     },
 
-    fiaspInsulin(amount) {
+    // Insulin active
+    // Returns insulin active at t hours, capping at amount when all insulin is released.
+    fiaspInsulinActive(amount) {
         return u => {
             const y = linear(
                 [u / HOUR],
                 fiaspInsulinModel.map(a => a[0]),
                 fiaspInsulinModel.map(a => a[1])
             )
-            return y[0]
+            const delivered = (y[0] / 100) * amount
+            // console.log(`amount:${amount}`, `delivered:${Math.min(delivered, amount)}`, `hours:${u / HOUR}`)
+            return Math.min(delivered, amount)
         }
     },
 
