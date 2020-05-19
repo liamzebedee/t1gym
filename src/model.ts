@@ -17,9 +17,9 @@ interface BGLMeasurement {
  */
 
 // Common time units in ms.
-const SECOND = 1000
-const MINUTE = SECOND * 60
-const HOUR = 60 * MINUTE
+export const SECOND = 1000
+export const MINUTE = 60 * SECOND
+export const HOUR = 60 * MINUTE
 
 function BackgroundGlucoseEffect({ sgv, date, duration }) {
     const BACKGROUND_RELEASE_MMOL_PER_HOUR = 1.0
@@ -32,7 +32,7 @@ let metabolism
 class BodyMetabolismModel {
     // Insulin sensitivity is the ratio of insulin units to blood glucose reduction.
     getInsulinSensitivity(t): number {
-        return -1.5
+        return -1.8
     }
 
     // 1g of carbs raises xmmol
@@ -63,7 +63,7 @@ export let fiaspInsulinModel = `
 4.5	97
 5	100
 `.split('\n').filter(x => !!x).map(line => line.match(/\S+/g).map(x => parseFloat(x)))
-console.log('fiasp', fiaspInsulinModel)
+// console.log('fiasp', fiaspInsulinModel)
 
 
 function fiaspInsulinEffect({ 
@@ -153,13 +153,81 @@ function foodEffect({
         const a1 = digested(x1)
         const a2 = digested(x2)
         let netCarbs = Math.abs(a1 - a2)
-        console.log(a2, a1, `carbs: ${netCarbs.toPrecision(2)}g`)
+        // console.log(a2, a1, `carbs: ${netCarbs.toPrecision(2)}g`)
         
         return netCarbs * metabolism.getCarbSensitivty()
     }
 }
 
-function exerciseEffect() {}
+const ExerciseIntensity = {
+    Cardio: 0.8,
+    Core: 0.4,
+}
+
+const BURN_RATE_PER_10MINS = (-6 * 60*MINUTE) / 6
+export const functions = {
+    exercise(intensity) {
+        return u => 
+            (intensity) * (u/BURN_RATE_PER_10MINS)
+    },
+
+    fiaspInsulin(amount) {
+        return u => {
+            const y = linear(
+                [u / HOUR],
+                fiaspInsulinModel.map(a => a[0]),
+                fiaspInsulinModel.map(a => a[1])
+            )
+            return y[0]
+        }
+    },
+
+    food(type, amount, glycemicIndex) {
+        let amount2 = amount
+        if(type == 'protein') {
+            amount2 /= 5
+            const PROTEIN_DEFAULT_GI = 0.4
+            if(!glycemicIndex) glycemicIndex = PROTEIN_DEFAULT_GI
+        }
+
+        return u => {
+            // linear release
+
+            // say release time is 5% every 10 mins
+            // 10/5 is per ms.
+
+            // 6*HOUR : GI 1.
+            // 
+            const duration = (1-glycemicIndex) * 6*HOUR
+            return amount * Math.min(u, duration) / duration
+        }
+    }
+}
+
+// Exercise is modelled as a linear curve.
+export function exerciseEffect({ start, duration, intensity }) {
+    // `u` denotes relative time
+    const F = (u) => {
+        return (intensity * BURN_RATE_PER_10MINS) * (u/duration)
+    }
+
+    return window({
+        start,
+        end: start + duration,
+        F
+    })
+}
+
+function window({ start, end, F }) {
+    return (t) => {
+        if(t < start) return 0
+        if(t > start && t < end) {
+            const u = t - start
+            return F(u)
+        }
+        if(t >= end) return F(end - start)
+    }
+}
 
 function insulinEffect() {
     return ({ date, sgv, duration }) => {
@@ -167,13 +235,12 @@ function insulinEffect() {
     }
 }
 
-class BasalInsulinEffect {
-
-}
 
 class Model {
     sgv
     date
+
+    constructor({}) {}
 
     static simulate(observed: GlucoseFeed): GlucoseFeed {
         let d = []
@@ -195,7 +262,7 @@ class Model {
             // 
             fiaspInsulinEffect({
                 metabolism,
-                amount: 9,
+                amount: 12,
                 injectionDate: startDate + 20 * MINUTE
             }),
 
@@ -206,6 +273,14 @@ class Model {
                 glycemicIndex: 63,
                 mealType: 'carbs',
                 ingestionDate: startDate
+            }),
+
+        ]
+        const functionalEffects = [
+            exerciseEffect({
+                intensity: ExerciseIntensity.Cardio,
+                start: startDate,
+                duration: 50 * MINUTE
             })
         ]
 
@@ -213,14 +288,17 @@ class Model {
         let date = startDate
         let sgv = startSGV
 
-        const STEP_SIZE = MINUTE/2 // 30s
+        const STEP_SIZE = 2*MINUTE // 30s
         for(; date <= until; date += STEP_SIZE) {
             effects.map(effect => {
                 sgv += effect({ date, sgv, duration: STEP_SIZE })
             })
 
+            const functionalSgv = functionalEffects.map(f => f(date)).reduce((prev, curr) => prev + curr, sgv)
+            console.log(functionalSgv)
+
             d.push({
-                sgv,
+                sgv: functionalSgv,
                 date
             })
         }

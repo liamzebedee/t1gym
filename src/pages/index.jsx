@@ -14,7 +14,7 @@ const Plot = dynamic(
 
 
 import data from '../../data/glucose.json'
-import { Model } from '../model';
+import { functions, Model, exerciseEffect, MINUTE, HOUR } from '../model';
 
 
 function convertFromMgToMmol(v) {
@@ -23,9 +23,11 @@ function convertFromMgToMmol(v) {
 
 function formatPlotlyDate(dateObj) {
     let date, time
-    let str = dateObj.toJSON().split('T')
-    date = str[0]
+    let str = dateObj.toLocaleString().split(', ')
+    // 2020-05-13 22:14
+    date = str[0].split('/').reverse().join('-')
     time = str[1].substring(0,5)
+    // console.log(date, time)
     return `${date} ${time}`
 }
 
@@ -55,6 +57,11 @@ function convertData(d) {
         .reverse()
 }
 
+import chrono from 'chrono-node'
+console.log(
+    chrono.parseDate('today')
+)
+
 function getData() {
     let observed = convertData(data)
     let predicted = Model.simulate(observed)
@@ -65,11 +72,59 @@ function getData() {
     }
 }
 
+let experiments = []
+
+const FunctionPlot = ({ fn, duration, id, title }) => {
+    const STEP = 1*MINUTE
+    
+    let xv = []
+    let yv = []
+    for(let x = 0; x < duration; x += STEP) {
+        // normalise x axis to showing minutes
+        xv.push(x/HOUR)
+        yv.push(fn(x))
+    }
+    console.log(xv, yv)
+
+    return <>
+        <Plot
+            layout={{
+                title
+            }}
+            data={[
+                {
+                    x: xv,
+                    y: yv,
+                    type: 'scatter',
+                    name: `fnplot-${id}`,
+                    mode: 'lines',
+                    marker: { color: 'black' },
+                },
+            ]}
+        />
+    </>
+}
 
 const Graph = () => {
+    const [annotations, setAnnotations] = useState([])
+
     const { observed, predicted } = getData()
     return <>
         <Plot
+            // onClick={(ev) => {
+            //     const { points } = ev
+            //     // Get the clicked point on the "real" line.
+            //     const {x,y} = points.filter(x => x.data.name == 'real')[0]
+            //     // console.l9g
+            //     setAnnotations(annotations.concat({
+            //         x,y
+            //     }))
+            // }}
+            onSelected={ev => {
+                const { range } = ev 
+                const [from, to] = range.x
+                
+            }}
             data={[
                 {
                     x: observed.map(a => a[0]),
@@ -96,7 +151,13 @@ const Graph = () => {
                     autorange: true,
                 },
                 yaxis: {range: [1, 20]},
+                annotations,
             }} />
+        
+        <FunctionPlot title="Exercise" id='exercise' fn={functions.exercise(1)} duration={2*HOUR}/>
+        <FunctionPlot title="Fiasp insulin" id='insulin' fn={functions.fiaspInsulin(1)} duration={5*HOUR}/>
+        <FunctionPlot title="Food (30g - Carbs)" id='insulin' fn={functions.food('carbs', 15, 0.8)} duration={7*HOUR}/>
+        <FunctionPlot title="Food (30g - Protein)" id='insulin' fn={functions.food('protein', 30)} duration={7*HOUR}/>
     </>
 }
 
