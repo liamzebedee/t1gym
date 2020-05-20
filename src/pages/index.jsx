@@ -110,7 +110,7 @@ function getData(fromTo) {
     }
 
     // Run simulation.
-    let predicted = Model.simulate(observed1)
+    let predicted = Model.simulate(observed1, 3.5*HOUR)
 
     // Convert to Plotly format.
     return {
@@ -147,8 +147,8 @@ const Graph = () => {
         <Plot
             onClick={(ev) => {
                 const { points } = ev
-                // Get the clicked point on the "real" line.
-                const { x,y } = points.filter(x => x.data.name == 'real')[0]
+                // Get the clicked point on the line.
+                const { x,y } = points[0]
 
                 const fromToStack = fromTo.slice() // clone
                 fromToStack.push((new Date(x)).getTime()) // x is time

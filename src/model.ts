@@ -230,7 +230,11 @@ class Model {
 
     constructor({}) {}
 
-    static simulate(observed: GlucoseFeed): GlucoseFeed {
+    static simulate(observed: GlucoseFeed, intoFuture: number = 0): GlucoseFeed {
+        if(!observed.length) {
+            return []
+            console.debug("No entries")
+        }
         let d = []
         
         // Step.
@@ -289,8 +293,8 @@ class Model {
         let date = startDate
         let sgv = startSGV
 
-        const STEP_SIZE = 2*MINUTE // 30s
-        for(; date <= until; date += STEP_SIZE) {
+        const STEP_SIZE = 1*MINUTE // 30s
+        for(; date <= until + intoFuture; date += STEP_SIZE) {
             effects.map(effect => {
                 sgv += effect({ date, sgv, duration: STEP_SIZE })
             })
