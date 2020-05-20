@@ -162,7 +162,67 @@ export const compose = (...fns) =>
         (...args) => nextFn(prevFn(...args)),
         value => value
     )
+;
 
+// Parse events list
+// eg. <<<
+// 2pm food 20g carbs 80
+// 3pm food 20g protein
+// 4pm insulin 12.1
+// 5pm exercise 30mins .8
+// >>>
+const chrono = require('chrono-node')
+const luxon = require('luxon')
+
+function parseEvents(events) {
+    return events.split(`\n`).map(l => l.trim()).filter(x => !!x).map(line => {
+        const parts = line.split(' ')
+        
+        function parseTime(time) {
+            const [hour,minute] = time.split('.')
+            return {
+                hour, 
+                minute
+            }
+        }
+        let datetime = luxon.DateTime.local().set(parseTime(parts[0]))
+        const start = datetime.toMillis()
+        
+        const type = parts[1]
+        if(type == 'food') {
+            const amount = parseFloat(parts[2].replace('g','')) // ignore g suffix
+            const foodType = parts[3]
+            let gi
+            if(foodType == 'carbs') {
+                gi = parseFloat(parts[4])
+            }
+            console.debug(start, type, amount, foodType, gi)
+            return compose(
+                functions.foodDigestionEffect(
+                    functions.foodDigestion(foodType, amount, gi / 100)
+                ),
+                functions.beginsAfter({
+                    start,
+                })
+            )
+        }
+        if(type == 'insulin') {
+            const amount = parseFloat(parts[2])
+            console.debug(start, type, amount)
+            return compose(
+                functions.insulinGlucoseEffect(
+                    functions.fiaspInsulinActive(amount)
+                ),
+                functions.beginsAfter({
+                    start,
+                })
+            )
+        }
+        if(type == 'exercise') {
+            // TODO
+        }
+    })
+}
 
 class Model {
     sgv
@@ -187,35 +247,43 @@ class Model {
             BackgroundGlucoseEffect,
         ]
 
+        let userEvents =parseEvents(`
+        10.55 food 60g carbs 80
+        11.24 insulin 5
+        12.31 insulin 5.6
+        13.12 insulin 1
+        `)
+        console.log(userEvents)
         const functionalEffects = [
-            compose(
-                functions.exercise(0.8),
-                functions.window({
-                    start: startDate + (20 * MINUTE),
-                    duration: 50*MINUTE
-                })
-            ),
+            // compose(
+            //     functions.exercise(0.8),
+            //     functions.window({
+            //         start: startDate + (20 * MINUTE),
+            //         duration: 50*MINUTE
+            //     })
+            // ),
 
-            // Mock dumplings.
-            // nom nom nom.
-            compose(
-                functions.foodDigestionEffect(
-                    functions.foodDigestion('carbs', 80, 63 / 100)
-                ),
-                functions.beginsAfter({
-                    start: startDate,
-                })
-            ),
+            // // Mock dumplings.
+            // // nom nom nom.
+            // compose(
+            //     functions.foodDigestionEffect(
+            //         functions.foodDigestion('carbs', 80, 63 / 100)
+            //     ),
+            //     functions.beginsAfter({
+            //         start: startDate,
+            //     })
+            // ),
 
-            compose(
-                functions.insulinGlucoseEffect(
-                    functions.fiaspInsulinActive(12)
-                ),
-                functions.beginsAfter({
-                    start: startDate + 20 * MINUTE,
-                })
-            )
-        ]
+            // compose(
+            //     functions.insulinGlucoseEffect(
+            //         functions.fiaspInsulinActive(12)
+            //     ),
+            //     functions.beginsAfter({
+            //         start: startDate + 20 * MINUTE,
+            //     })
+            // )
+        ].concat(userEvents)
+
 
         // Current state
         let date = startDate
