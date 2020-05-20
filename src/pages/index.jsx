@@ -1,10 +1,11 @@
 // import Plot from 'react-plotly.js';
 // const Plot = require('react-plotly.js')
-import { useEffect, useState, Component } from 'react';
+import { useEffect, useState, Component, useReducer } from 'react';
 import ReactDOM from 'react-dom'
 
 import dynamic from 'next/dynamic';
 
+// Make Plotly work with Next.js.
 const Plot = dynamic(
     () => import('react-plotly.js'),
     {
@@ -12,10 +13,10 @@ const Plot = dynamic(
     }
 )
 
-
 import data from '../../data/glucose.json'
 import { functions, Model, exerciseEffect, MINUTE, HOUR, compose } from '../model';
-
+import _ from 'lodash'
+import chrono from 'chrono-node'
 
 function convertFromMgToMmol(v) {
     return v / 18.
@@ -46,6 +47,7 @@ function toPlotlyFormat(data) {
     })
 }
 
+// Convert American glucose units.
 function convertData(d) {
     return d
         .map(d => {
@@ -57,20 +59,6 @@ function convertData(d) {
         .reverse()
 }
 
-import chrono from 'chrono-node'
-console.log(
-    chrono.parseDate('today')
-)
-
-function getData() {
-    let observed = convertData(data)
-    let predicted = Model.simulate(observed)
-
-    return {
-        observed: toPlotlyFormat(observed),
-        predicted: toPlotlyFormat(predicted)
-    }
-}
 
 let experiments = []
 
@@ -104,26 +92,80 @@ const FunctionPlot = ({ fn, duration, id, title }) => {
     </>
 }
 
+
+
+function getData(fromTo) {
+    // Convert data from raw NightScout JSON.
+    let observed = convertData(data)
+
+    let observed1 = observed
+    
+    // Filter between fromTo, if it's configured. 
+    if(fromTo.length == 2) {
+        let [from,to] = fromTo
+        console.debug(`from=${from} to=${to}`)
+        observed1 = observed.filter(entry => {
+            return (entry.date >= from) && (entry.date <= to)
+        })
+    }
+
+    // Run simulation.
+    let predicted = Model.simulate(observed1)
+
+    // Convert to Plotly format.
+    return {
+        observed: toPlotlyFormat(observed),
+        predicted: toPlotlyFormat(predicted)
+    }
+}
+
+
 const Graph = () => {
     const [annotations, setAnnotations] = useState([])
+    const [fromTo, setFromTo] = useState([])
 
-    const { observed, predicted } = getData()
+    // ew gross
+    const [observed, setObserved] = useState([])
+    const [predicted, setPredicted] = useState([])
+
+    useEffect(() => {
+        const { observed, predicted } = getData(fromTo)
+        setObserved(observed)
+        setPredicted(predicted)
+    }, [fromTo])
+
+    function clearTimeFilter() {
+        setFromTo([])
+    }
+
     return <>
+        <div>
+            <label>Time filter: { fromTo.length == 2 ? 'set' : 'unset' }</label>
+            <button onClick={clearTimeFilter}>Clear</button>
+        </div>
+
         <Plot
-            // onClick={(ev) => {
-            //     const { points } = ev
-            //     // Get the clicked point on the "real" line.
-            //     const {x,y} = points.filter(x => x.data.name == 'real')[0]
-            //     // console.l9g
-            //     setAnnotations(annotations.concat({
-            //         x,y
-            //     }))
-            // }}
-            onSelected={ev => {
-                const { range } = ev 
-                const [from, to] = range.x
+            onClick={(ev) => {
+                const { points } = ev
+                // Get the clicked point on the "real" line.
+                const { x,y } = points.filter(x => x.data.name == 'real')[0]
+
+                const fromToStack = fromTo.slice() // clone
+                fromToStack.push((new Date(x)).getTime()) // x is time
                 
+                const recent = fromToStack.slice(-2)
+                
+                setFromTo(_.sortBy(recent)) // use only recent two items
+
+                setAnnotations(annotations.concat({
+                    x,y
+                }))
             }}
+            // onSelected={ev => {
+            //     const { range } = ev 
+            //     const [from, to] = range.x
+            //     setFromTo([from, to])
+            // }}
             data={[
                 {
                     x: observed.map(a => a[0]),
