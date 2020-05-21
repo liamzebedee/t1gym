@@ -166,6 +166,7 @@ export const compose = (...fns) =>
 
 // Parse events list
 // eg. <<<
+// 20/5/2020 begin
 // 2pm food 20g carbs 80
 // 3pm food 20g protein
 // 4pm insulin 12.1
@@ -174,7 +175,9 @@ export const compose = (...fns) =>
 const chrono = require('chrono-node')
 const luxon = require('luxon')
 
-function parseEvents(events) {
+export function parseEvents(events) {
+    let referenceDate = luxon.DateTime.local()
+
     return events.split(`\n`).map(l => l.trim()).filter(x => !!x).map(line => {
         const parts = line.split(' ')
         
@@ -185,10 +188,21 @@ function parseEvents(events) {
                 minute
             }
         }
-        let datetime = luxon.DateTime.local().set(parseTime(parts[0]))
-        const start = datetime.toMillis()
         
         const type = parts[1]
+        if(type == 'begin') {
+            // parse dd/mm/yyyy
+            const [dd,mm,yyyy] = parts[0].split('/')
+            referenceDate = referenceDate.set({
+                year: yyyy,
+                month: mm,
+                day: dd
+            })
+            return
+        }
+
+        const start = referenceDate.set(parseTime(parts[0])).toMillis()
+        
         if(type == 'food') {
             const amount = parseFloat(parts[2].replace('g','')) // ignore g suffix
             const foodType = parts[3]
@@ -221,7 +235,7 @@ function parseEvents(events) {
         if(type == 'exercise') {
             // TODO
         }
-    })
+    }).filter(x => !!x) // identity
 }
 
 class Model {
