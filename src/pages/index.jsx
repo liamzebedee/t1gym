@@ -13,7 +13,7 @@ const Plot = dynamic(
     }
 )
 
-import data from '../../data/glucose.json'
+import latestGlucoseFeed from '../../data/glucose.json'
 import { functions, Model, exerciseEffect, MINUTE, HOUR, compose, parseEvents } from '../model';
 import _ from 'lodash'
 import chrono from 'chrono-node'
@@ -94,7 +94,7 @@ const FunctionPlot = ({ fn, duration, id, title }) => {
 
 
 
-function getData(fromTo, events) {
+function getData(data, fromTo, events) {
     // Convert data from raw NightScout JSON.
     let observed = convertData(data)
 
@@ -120,6 +120,8 @@ function getData(fromTo, events) {
 }
 
 import { Textarea } from "@chakra-ui/core";
+import { Select, Button } from "@chakra-ui/core";
+
 
 const Graph = () => {
     const [annotations, setAnnotations] = useState([])
@@ -141,6 +143,8 @@ const Graph = () => {
 18.05 food 35g carbs 90`)
 
     useEffect(() => {
+        loadExperiments()
+
         let events
         try {
             events = parseEvents(eventsText)
@@ -149,7 +153,7 @@ const Graph = () => {
             return
         }
 
-        const { observed, predicted } = getData(fromTo, events)
+        const { observed, predicted } = getData(latestGlucoseFeed, fromTo, events)
         setObserved(observed)
         setPredicted(predicted)
     }, [fromTo, eventsText])
@@ -158,10 +162,48 @@ const Graph = () => {
         setFromTo([])
     }
 
+    const [experiments, setExperiments] = useState([])
+    
+    function saveExperiment() {
+        // Save the experiment for later viewing.
+        // - observed data
+        // - events
+        // - fromTo
+
+        const experiment = {
+            observed, eventsText, fromTo
+        }
+        const experiments1 = [...experiments, experiment]
+        
+        setExperiments(experiments1)
+        localStorage.setItem('experiments', JSON.stringify(experiments1))
+    }
+
+    function loadExperiments() {
+        let d = localStorage.getItem('experiments') || ''
+        setExperiments(
+            JSON.parse(d)
+        )
+    }
+
+    function loadExperiment(i) {
+        if(!i) {
+            setObserved(latestGlucoseFeed)
+            setEventsText('')
+            setFromTo([])
+            return
+        } // The <select> title was clicked.
+
+        let { observed, eventsText, fromTo } = experiments[i]
+        setObserved(observed)
+        setEventsText(eventsText)
+        setFromTo(fromTo)
+    }
+
     return <>
         <div>
             <label>Time filter: { fromTo.length == 2 ? 'set' : 'unset' }</label>
-            <button onClick={clearTimeFilter}>Clear</button>
+            <Button onClick={clearTimeFilter}>Clear</Button>
         </div>
 
         <div>
@@ -174,6 +216,17 @@ const Graph = () => {
                 size="md"
             />
         </div>
+
+
+        <Button variantColor="green" onClick={saveExperiment}>Save experiment</Button>
+
+        <Select placeholder="Choose experiment..." onChange={ev => loadExperiment(ev.target.value)}>
+            {
+                experiments.map((experiment, i) => {
+                    return <option value={`${i}`}>Experiment {i}</option>
+                })
+            }
+        </Select>
 
         <Plot
             onClick={(ev) => {
