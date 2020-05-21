@@ -244,7 +244,7 @@ class Model {
 
     constructor({}) {}
 
-    static simulate(observed: GlucoseFeed, intoFuture: number = 0): GlucoseFeed {
+    static simulate(observed: GlucoseFeed, intoFuture: number = 0, events: Function[]): GlucoseFeed {
         if(!observed.length) {
             return []
             console.debug("No entries")
@@ -265,42 +265,8 @@ class Model {
             BackgroundGlucoseEffect,
         ]
 
-        let userEvents =parseEvents(`
-        10.55 food 60g carbs 80
-        11.24 insulin 5
-        12.31 insulin 5.6
-        13.12 insulin 1
-        `)
-        console.log(userEvents)
-        const functionalEffects = [
-            // compose(
-            //     functions.exercise(0.8),
-            //     functions.window({
-            //         start: startDate + (20 * MINUTE),
-            //         duration: 50*MINUTE
-            //     })
-            // ),
-
-            // // Mock dumplings.
-            // // nom nom nom.
-            // compose(
-            //     functions.foodDigestionEffect(
-            //         functions.foodDigestion('carbs', 80, 63 / 100)
-            //     ),
-            //     functions.beginsAfter({
-            //         start: startDate,
-            //     })
-            // ),
-
-            // compose(
-            //     functions.insulinGlucoseEffect(
-            //         functions.fiaspInsulinActive(12)
-            //     ),
-            //     functions.beginsAfter({
-            //         start: startDate + 20 * MINUTE,
-            //     })
-            // )
-        ].concat(userEvents)
+        // console.log(userEvents)
+        const functionalEffects = [].concat(events)
 
 
         // Current state

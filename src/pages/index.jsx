@@ -14,7 +14,7 @@ const Plot = dynamic(
 )
 
 import data from '../../data/glucose.json'
-import { functions, Model, exerciseEffect, MINUTE, HOUR, compose } from '../model';
+import { functions, Model, exerciseEffect, MINUTE, HOUR, compose, parseEvents } from '../model';
 import _ from 'lodash'
 import chrono from 'chrono-node'
 
@@ -94,7 +94,7 @@ const FunctionPlot = ({ fn, duration, id, title }) => {
 
 
 
-function getData(fromTo) {
+function getData(fromTo, eventsText) {
     // Convert data from raw NightScout JSON.
     let observed = convertData(data)
 
@@ -110,7 +110,7 @@ function getData(fromTo) {
     }
 
     // Run simulation.
-    let predicted = Model.simulate(observed1, 3.5*HOUR)
+    let predicted = Model.simulate(observed1, 3.5*HOUR, parseEvents(eventsText))
 
     // Convert to Plotly format.
     return {
@@ -119,6 +119,7 @@ function getData(fromTo) {
     }
 }
 
+import { Textarea } from "@chakra-ui/core";
 
 const Graph = () => {
     const [annotations, setAnnotations] = useState([])
@@ -127,12 +128,23 @@ const Graph = () => {
     // ew gross
     const [observed, setObserved] = useState([])
     const [predicted, setPredicted] = useState([])
+    const [eventsText, setEventsText] = useState(
+`20/05/2020 begin
+10.55 food 60g carbs 80
+11.24 insulin 5
+12.31 insulin 5.6
+13.12 insulin 1
+15.28 insulin 3.5
+15.36 insulin 2
+15.49 insulin 1.5
+15.49 food 15g carbs 60
+18.05 food 35g carbs 90`)
 
     useEffect(() => {
-        const { observed, predicted } = getData(fromTo)
+        const { observed, predicted } = getData(fromTo, eventsText)
         setObserved(observed)
         setPredicted(predicted)
-    }, [fromTo])
+    }, [fromTo, eventsText])
 
     function clearTimeFilter() {
         setFromTo([])
@@ -142,6 +154,17 @@ const Graph = () => {
         <div>
             <label>Time filter: { fromTo.length == 2 ? 'set' : 'unset' }</label>
             <button onClick={clearTimeFilter}>Clear</button>
+        </div>
+
+        <div>
+            <label>Events</label>
+
+            <Textarea
+                value={eventsText}
+                onChange={e => setEventsText(e.target.value)}
+                placeholder="Here is a sample placeholder"
+                size="md"
+            />
         </div>
 
         <Plot
@@ -212,8 +235,10 @@ const Graph = () => {
     </>
 }
 
+import { ThemeProvider } from "@chakra-ui/core";
+
 export default () => {
-    return <div>
+    return <ThemeProvider>
         <Graph />
-    </div>
+    </ThemeProvider>
 }

@@ -10,12 +10,18 @@
     "ts:watch": "tsc -W"
   },
   "dependencies": {
+    "@chakra-ui/core": "^0.8.0",
+    "@emotion/core": "^10.0.28",
+    "@emotion/styled": "^10.0.27",
     "chart.js": "^2.9.3",
     "chrono-node": "^1.4.6",
+    "emotion-theming": "^10.0.27",
     "everpolate": "^0.0.3",
     "localforage": "^1.7.3",
     "lodash": "^4.17.15",
+    "luxon": "^1.24.1",
     "moment": "^2.25.3",
+    "moment-timezone": "^0.5.31",
     "next": "^9.3.6",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
