@@ -94,7 +94,7 @@ const FunctionPlot = ({ fn, duration, id, title }) => {
 
 
 
-function getData(fromTo, eventsText) {
+function getData(fromTo, events) {
     // Convert data from raw NightScout JSON.
     let observed = convertData(data)
 
@@ -110,7 +110,7 @@ function getData(fromTo, eventsText) {
     }
 
     // Run simulation.
-    let predicted = Model.simulate(observed1, 3.5*HOUR, parseEvents(eventsText))
+    let predicted = Model.simulate(observed1, 3.5*HOUR, events)
 
     // Convert to Plotly format.
     return {
@@ -141,7 +141,15 @@ const Graph = () => {
 18.05 food 35g carbs 90`)
 
     useEffect(() => {
-        const { observed, predicted } = getData(fromTo, eventsText)
+        let events
+        try {
+            events = parseEvents(eventsText)
+        } catch(ex) {
+            // didn't validate
+            return
+        }
+
+        const { observed, predicted } = getData(fromTo, events)
         setObserved(observed)
         setPredicted(predicted)
     }, [fromTo, eventsText])
