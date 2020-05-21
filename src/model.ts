@@ -125,7 +125,7 @@ export const functions = {
             // 6*HOUR : GI 1.
             // 
             const duration = (1-glycemicIndex) * 6*HOUR
-            return amount * Math.min(u, duration) / duration
+            return amount2 * Math.min(u, duration) / duration
         }
     },
 
