@@ -14,7 +14,7 @@ const Plot = dynamic(
 )
 
 import latestGlucoseFeed from '../../data/glucose.json'
-import { functions, Model, exerciseEffect, MINUTE, HOUR, compose, parseEvents } from '../model';
+import { functions, Model, exerciseEffect, MINUTE, HOUR, compose, parseEvents, BodyMetabolismModel, SECOND, parseEvents2 } from '../model';
 import _ from 'lodash'
 import chrono from 'chrono-node'
 
@@ -53,6 +53,7 @@ function convertData(d) {
         .map(d => {
             return {
                 ...d,
+                date: d.date + 10*SECOND,
                 sgv: convertFromMgToMmol(d.sgv)
             }
         })
@@ -94,9 +95,9 @@ const FunctionPlot = ({ fn, duration, id, title }) => {
 
 
 
-function getData(data, fromTo, events) {
+function getData(glucoseFeed, fromTo, events, model) {
     // Convert data from raw NightScout JSON.
-    let observed = convertData(data)
+    let observed = convertData(glucoseFeed)
 
     let observed1 = observed
     
@@ -110,7 +111,7 @@ function getData(data, fromTo, events) {
     }
 
     // Run simulation.
-    let predicted = Model.simulate(observed1, 3.5*HOUR, events)
+    let predicted = Model.simulate(observed1,1*HOUR, events, model)
 
     // Convert to Plotly format.
     return {
@@ -119,8 +120,9 @@ function getData(data, fromTo, events) {
     }
 }
 
-import { Textarea } from "@chakra-ui/core";
+import { Textarea, NumberInputField, NumberInputStepper, NumberIncrementStepper, NumberDecrementStepper, NumberInput, Stack, FormControl, FormLabel, CSSReset, Heading, Box, Flex } from "@chakra-ui/core";
 import { Select, Button } from "@chakra-ui/core";
+// import * from '@chakra-ui/core'
 
 
 const Graph = () => {
@@ -128,19 +130,15 @@ const Graph = () => {
     const [fromTo, setFromTo] = useState([])
 
     // ew gross
+    const [glucoseFeed, setGlucoseFeed] = useState(latestGlucoseFeed)
     const [observed, setObserved] = useState([])
     const [predicted, setPredicted] = useState([])
-    const [eventsText, setEventsText] = useState(
-`20/05/2020 begin
-10.55 food 60g carbs 80
-11.24 insulin 5
-12.31 insulin 5.6
-13.12 insulin 1
-15.28 insulin 3.5
-15.36 insulin 2
-15.49 insulin 1.5
-15.49 food 15g carbs 60
-18.05 food 35g carbs 90`)
+    const [eventsText, setEventsText] = useState('')
+    const [model, setModel] = useState({
+        insulinSensitivity: -2.0,
+        carbSensitivity: 2.9,
+        insulinActive: 1.0
+    })
 
     useEffect(() => {
         loadExperiments()
@@ -148,15 +146,31 @@ const Graph = () => {
         let events
         try {
             events = parseEvents(eventsText)
+            
+            // Output some stats.
+            const eventRecords = parseEvents2(eventsText)
+            console.log(eventRecords.filter(x => x.type == 'insulin'))
+            const totalInsulin = eventRecords.filter(x => x.type == 'insulin').reduce((prev, curr) => {
+                return prev + curr.amount
+            }, 0)
+            const totalCarbs = eventRecords.filter(x => x.type == 'food').reduce((prev, curr) => {
+                return prev + curr.amount
+            }, 0)
+            console.log(`Total insulin:`, totalInsulin, 'U')
+            console.log(`Total carbs:`, totalCarbs, 'g')
         } catch(ex) {
+            console.log(ex)
             // didn't validate
             return
         }
 
-        const { observed, predicted } = getData(latestGlucoseFeed, fromTo, events)
+        const { observed, predicted } = getData(
+            glucoseFeed, fromTo, events,
+            new BodyMetabolismModel(model)
+        )
         setObserved(observed)
         setPredicted(predicted)
-    }, [fromTo, eventsText])
+    }, [glucoseFeed, fromTo, eventsText, model])
 
     function clearTimeFilter() {
         setFromTo([])
@@ -171,7 +185,7 @@ const Graph = () => {
         // - fromTo
 
         const experiment = {
-            observed, eventsText, fromTo
+            glucoseFeed, observed, eventsText, fromTo
         }
         const experiments1 = [...experiments, experiment]
         
@@ -180,126 +194,205 @@ const Graph = () => {
     }
 
     function loadExperiments() {
-        let d = localStorage.getItem('experiments') || ''
+        let d = localStorage.getItem('experiments') || '[]'
+        let d2 = JSON.parse(d)
         setExperiments(
-            JSON.parse(d)
+            d2
         )
     }
 
     function loadExperiment(i) {
         if(!i) {
-            setObserved(latestGlucoseFeed)
+            setGlucoseFeed(latestGlucoseFeed)
+            setObserved([])
             setEventsText('')
             setFromTo([])
             return
         } // The <select> title was clicked.
 
-        let { observed, eventsText, fromTo } = experiments[i]
+        let { glucoseFeed, observed, eventsText, fromTo } = experiments[i]
+        // setGlucoseFeed(glucoseFeed)
         setObserved(observed)
         setEventsText(eventsText)
         setFromTo(fromTo)
     }
 
-    return <>
-        <div>
-            <label>Time filter: { fromTo.length == 2 ? 'set' : 'unset' }</label>
-            <Button onClick={clearTimeFilter}>Clear</Button>
-        </div>
+    return <Box p="5">
+        <Flex align="center">
+            <Heading as="h5" size="sm">
+                Experiments
+            </Heading>
+            <Stack shouldWrapChildren isInline>
+                <Select size="sm" placeholder="Choose experiment..." onChange={ev => loadExperiment(ev.target.value)}>
+                    {
+                        experiments.map((experiment, i) => {
+                            return <option value={`${i}`}>Experiment {i}</option>
+                        })
+                    }
+                </Select>
+                <Button size="sm" variantColor="green" onClick={saveExperiment}>Save</Button>
+            </Stack>
+        </Flex>
 
-        <div>
-            <label>Events</label>
+        <Flex align="center">
+            <Flex align="left">
+            <Plot
+                onClick={(ev) => {
+                    const { points } = ev
+                    // Get the clicked point on the line.
+                    const { x,y } = points[0]
 
-            <Textarea
-                value={eventsText}
-                onChange={e => setEventsText(e.target.value)}
-                placeholder="Here is a sample placeholder"
-                size="md"
+                    const fromToStack = fromTo.slice() // clone
+                    fromToStack.push((new Date(x)).getTime()) // x is time
+                    
+                    const recent = fromToStack.slice(-2)
+                    
+                    setFromTo(_.sortBy(recent)) // use only recent two items
+
+                    setAnnotations(annotations.concat({
+                        x,y
+                    }))
+                }}
+                // onSelected={ev => {
+                //     const { range } = ev 
+                //     const [from, to] = range.x
+                //     setFromTo([from, to])
+                // }}
+                data={[
+                    {
+                        x: observed.map(a => a[0]),
+                        y: observed.map(a => a[1]),
+                        type: 'scatter',
+                        name: 'real',
+                        mode: 'lines+markers',
+                        marker: { color: 'black' },
+                    },
+                    {
+                        x: predicted.map(a => a[0]),
+                        y: predicted.map(a => a[1]),
+                        name: 'predicted',
+                        type: 'scatter',
+                        mode: 'lines',
+                        marker: { color: 'blue' },
+                    }
+                ]}
+                layout={{ 
+                    width: 1024, 
+                    height: 720, 
+                    title: 'Blood glucose',
+                    xaxis: {
+                        autorange: true,
+                        title: 'Time'
+                    },
+                    yaxis: {
+                        range: [1, 20],
+                        title: 'BGL'
+                    },
+                    annotations,
+                }} 
             />
-        </div>
-
-
-        <Button variantColor="green" onClick={saveExperiment}>Save experiment</Button>
-
-        <Select placeholder="Choose experiment..." onChange={ev => loadExperiment(ev.target.value)}>
-            {
-                experiments.map((experiment, i) => {
-                    return <option value={`${i}`}>Experiment {i}</option>
-                })
-            }
-        </Select>
-
-        <Plot
-            onClick={(ev) => {
-                const { points } = ev
-                // Get the clicked point on the line.
-                const { x,y } = points[0]
-
-                const fromToStack = fromTo.slice() // clone
-                fromToStack.push((new Date(x)).getTime()) // x is time
+            </Flex>
+            <Flex align="right" flexDirection="column" align="top">
+                <Heading as="h5" size="md">
+                    Model
+                </Heading>
                 
-                const recent = fromToStack.slice(-2)
+                <FormControl>
+                    <FormLabel htmlFor="events">Events</FormLabel>
+                    <Textarea
+                        height={275}
+                        id='events'
+                        value={eventsText}
+                        onChange={e => setEventsText(e.target.value)}
+                        placeholder="Here is a sample placeholder"
+                        size="md"
+                    />
+                </FormControl>
                 
-                setFromTo(_.sortBy(recent)) // use only recent two items
+                <div>
+                    
+                    <label><strong>Time filter</strong>: { fromTo.length == 2 ? 'set' : 'unset' }</label>
+                    <Button size="sm" onClick={clearTimeFilter}>Clear</Button>
+                </div>
 
-                setAnnotations(annotations.concat({
-                    x,y
-                }))
-            }}
-            // onSelected={ev => {
-            //     const { range } = ev 
-            //     const [from, to] = range.x
-            //     setFromTo([from, to])
-            // }}
-            data={[
-                {
-                    x: observed.map(a => a[0]),
-                    y: observed.map(a => a[1]),
-                    type: 'scatter',
-                    name: 'real',
-                    mode: 'lines+markers',
-                    marker: { color: 'black' },
-                },
-                {
-                    x: predicted.map(a => a[0]),
-                    y: predicted.map(a => a[1]),
-                    name: 'predicted',
-                    type: 'scatter',
-                    mode: 'lines',
-                    marker: { color: 'blue' },
-                }
-            ]}
-            layout={{ 
-                width: 1024, 
-                height: 720, 
-                title: 'Blood glucose',
-                xaxis: {
-                    autorange: true,
-                },
-                yaxis: {range: [1, 20]},
-                annotations,
-            }} />
+                <Stack shouldWrapChildren isInline>
+                    <FormControl>
+                        <FormLabel htmlFor="carb-sensitivity">🍎 Carb. sensitivity (10g : x mmol)</FormLabel>
+                        <NumberInput 
+                            id="carb-sensitivity" size="sm" defaultValue={model.carbSensitivity} precision={1} step={0.1} 
+                            onChange={v => {
+                                setModel({ ...model, carbSensitivity: parseFloat(v) })
+                            }}>
+                            <NumberInputField />
+                            <NumberInputStepper>
+                            <NumberIncrementStepper />
+                            <NumberDecrementStepper />
+                            </NumberInputStepper>
+                        </NumberInput>
+                    </FormControl>
+
+                    <FormControl>
+                        <FormLabel htmlFor="carb-sensitivity">💉 Insulin sensitivity (1U : x mmol)</FormLabel>
+                        <NumberInput size="sm" defaultValue={model.insulinSensitivity} precision={1} min={-10} step={0.1} max={0}
+                            onChange={v => {
+                                setModel({ ...model, insulinSensitivity: parseFloat(v) })
+                            }}>
+                            <NumberInputField />
+                            <NumberInputStepper>
+                            <NumberIncrementStepper />
+                            <NumberDecrementStepper />
+                            </NumberInputStepper>
+                        </NumberInput>
+                        <div>
+                            (1U : {(model.carbSensitivity / -1 * model.insulinSensitivity).toFixed(1)}g)
+                        </div>
+                    </FormControl>
+
+                    <FormControl>
+                        <FormLabel htmlFor="carb-sensitivity">💉⏱ Insulin active</FormLabel>
+                        <NumberInput size="sm" defaultValue={model.insulinActive} precision={1} min={0} step={0.1}
+                            onChange={v => {
+                                setModel({ ...model, insulinActive: parseFloat(v) })
+                            }}>
+                            <NumberInputField />
+                            <NumberInputStepper>
+                            <NumberIncrementStepper />
+                            <NumberDecrementStepper />
+                            </NumberInputStepper>
+                        </NumberInput>
+                    </FormControl>
+                </Stack>
+            </Flex>
+        </Flex>
+        
+        
+
+        
         
         <FunctionPlot title="Testing" id='testing' fn={
             compose(
-                functions.exercise(0.8),
-                functions.window({
-                    start: 50*MINUTE,
-                    duration: 20*MINUTE
+                functions.foodDigestionEffect(
+                    functions.foodDigestion('carbs', 40, 51 / 100)
+                ),
+                functions.beginsAfter({
+                    start: 0,
                 })
             )
-        } duration={2*HOUR}/>
+        } duration={6*HOUR}/>
 
         <FunctionPlot title="Exercise" id='exercise' fn={functions.exercise(1)} duration={2*HOUR}/>
         <FunctionPlot title="Fiasp insulin active" id='insulin' fn={functions.fiaspInsulinActive(1)} duration={7*HOUR}/>
-        <FunctionPlot title="Food digestion (30g - Carbs)" id='insulin' fn={functions.foodDigestion('carbs', 15, 0.8)} duration={7*HOUR}/>
+        <FunctionPlot title="Food digestion (30g - Carbs)" id='insulin' fn={functions.foodDigestion('carbs', 30, 0.5)} duration={7*HOUR}/>
         <FunctionPlot title="Food digestion (30g - Protein)" id='insulin' fn={functions.foodDigestion('protein', 30)} duration={7*HOUR}/>
-    </>
+    </Box>
 }
+
 
 import { ThemeProvider } from "@chakra-ui/core";
 
 export default () => {
     return <ThemeProvider>
+        <CSSReset/>
         <Graph />
     </ThemeProvider>
 }
