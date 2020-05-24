@@ -1,4 +1,5 @@
-import _ from 'lodash'
+
+const _ = require('lodash')
 const {step, linear} = require('everpolate')
 
 type GlucoseFeed = BGLMeasurement[]
@@ -27,26 +28,53 @@ function BackgroundGlucoseEffect({ sgv, date, duration }) {
     return (duration / d[0]) * d[1]
 }
 
-let metabolism
 
-class BodyMetabolismModel {
-    // Insulin sensitivity is the ratio of insulin units to blood glucose reduction.
-    getInsulinSensitivity(): number {
-        return -1.8
+export class BodyMetabolismModel {
+    // insulinSensitivity = -2
+    // carbSensitivity = 4.5 / 15
+    // insulinActive
+    public insulinSensitivity
+    public carbSensitivity
+    public insulinActive
+
+    constructor(opts) {
+        Object.assign(this, opts)
     }
 
-    // 1g of carbs raises xmmol
-    getCarbSensitivty(t): number {
+    // Insulin sensitivity is the ratio of 1 insulin unit : x mmol blood glucose reduction.
+    getInsulinSensitivity(): number {
+        // return -2.2
+        return this.insulinSensitivity
+    }
+
+    // 10g of carbs raises x mmol
+    getCarbSensitivty(): number {
         // 15g carb raises BGL by 3mmol
         // 15/3
-        return .2
+        // return .2 * 1.5
+        // bolus ratio
+        // 8g : 1U
+        // 8g = 1U
+
+        // return -1 * this.getInsulinSensitivity() / 8
+        // const carbs = 15
+        // const mmol = 4.5
+        // return mmol / carbs
+
+        return this.carbSensitivity / 10.
     }
 
-    getDurationInsulinActivity(): number {
-        return 2.2
+    // Gets
+    getInsulinActive(): number {
+        return this.insulinActive
     }
 }
 
+let metabolism = new BodyMetabolismModel({
+    insulinSensitivity: -2.0,
+    carbSensitivity: 2.9,
+    insulinActive: 1.0
+})
 
 // Fiasp insulin model.
 // HOUR IOB
@@ -79,6 +107,37 @@ const ExerciseIntensity = {
 
 const BURN_RATE = (-6 / (60*MINUTE))
 
+/**
+ * An example of how to use/compose these functions:
+ * 
+    compose(
+        functions.exercise(0.8),
+        functions.window({
+            start: startDate + (20 * MINUTE),
+            duration: 50*MINUTE
+        })
+    ),
+
+    // Mock dumplings.
+    // nom nom nom.
+    compose(
+        functions.foodDigestionEffect(
+            functions.foodDigestion('carbs', 80, 63 / 100)
+        ),
+        functions.beginsAfter({
+            start: startDate,
+        })
+    ),
+
+    compose(
+        functions.insulinGlucoseEffect(
+            functions.fiaspInsulinActive(12)
+        ),
+        functions.beginsAfter({
+            start: startDate + 20 * MINUTE,
+        })
+    )
+ */
 export const functions = {
     exercise(intensity) {
         return u => 
@@ -89,8 +148,11 @@ export const functions = {
     // Returns insulin active at t hours, capping at amount when all insulin is released.
     fiaspInsulinActive(amount) {
         return u => {
+            // scale u by slowness
+            // const u1 = u / 1.5
+            const u1 = u * metabolism.getInsulinActive()
             const y = linear(
-                [u / HOUR],
+                [u1 / HOUR],
                 fiaspInsulinModel.map(a => a[0]),
                 fiaspInsulinModel.map(a => a[1])
             )
@@ -103,7 +165,7 @@ export const functions = {
     insulinGlucoseEffect(insulinActive) {
         // const insulinActive = functions.fiaspInsulinActive(amount)
         return (u, b, c) => {
-            console.log(u, b, c, insulinActive(u), metabolism.getInsulinSensitivity())
+            // console.log(u, b, c, insulinActive(u), metabolism.getInsulinSensitivity())
             return insulinActive(u) * metabolism.getInsulinSensitivity()
         }
     },
@@ -253,7 +315,7 @@ class Model {
 
     constructor({}) {}
 
-    static simulate(observed: GlucoseFeed, intoFuture: number = 0, events: Function[]): GlucoseFeed {
+    static simulate(observed: GlucoseFeed, intoFuture: number = 0, events: Function[], model: BodyMetabolismModel): GlucoseFeed {
         if(!observed.length) {
             return []
             console.debug("No entries")
@@ -268,10 +330,11 @@ class Model {
         let until = _.last(observed).date
 
         // Model
-        metabolism = new BodyMetabolismModel()
+        metabolism = model
+        // metabolism = new BodyMetabolismModel()
         // Effects
         let effects = [
-            BackgroundGlucoseEffect,
+            // BackgroundGlucoseEffect,
         ]
 
         // console.log(userEvents)
