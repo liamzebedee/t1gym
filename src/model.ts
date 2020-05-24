@@ -233,7 +233,16 @@ export function parseEvents(events) {
             )
         }
         if(type == 'exercise') {
-            // TODO
+            const duration = parseFloat(parts[2].replace('mins','')) // ignore mins suffix
+            const intensity = parseFloat(parts[3])
+            
+            return compose(
+                functions.exercise(intensity),
+                functions.window({
+                    start,
+                    duration: duration*MINUTE
+                })
+            )
         }
     }).filter(x => !!x) // identity
 }
