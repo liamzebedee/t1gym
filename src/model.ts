@@ -215,6 +215,19 @@ export const functions = {
             if(t < start) return 0
             return elapsed(t)
         }
+    },
+
+    // We model basal as a simple incremental release of the basal `amount`
+    // every minute.
+    basalEffect(rate) {
+        return u => {
+            let g = 0
+            for(let i = 0; i < u; i += MINUTE) {
+                // Divide rate per minute.
+                g += functions.insulinGlucoseEffect(functions.fiaspInsulinActive(rate / 60))(u + i)
+            }
+            return g
+        }
     }
 }
 
@@ -343,6 +356,17 @@ export function eventToFunction(event) {
                 })
             )
         }
+        case 'basal': {
+            const { start, amount } = event
+            return compose(
+                functions.basalEffect(
+                    amount
+                ),
+                functions.beginsAfter({
+                    start
+                })
+            )
+        }
         default: 
             throw new Error(`Unknown event type ${event.type}`)
     }
@@ -373,7 +397,7 @@ class Model {
         // metabolism = new BodyMetabolismModel()
         // Effects
         let imperativeEffects = [
-            // BackgroundGlucoseEffect,
+            BackgroundGlucoseEffect,
         ]
 
         // console.log(userEvents)
