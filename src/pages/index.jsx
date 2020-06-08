@@ -363,28 +363,35 @@ const Graph = () => {
             </Flex>
         </Flex>
         
-        
-
-        
-        
-        <FunctionPlot title="Testing" id='testing' fn={
-            compose(
-                functions.foodDigestionEffect(
-                    functions.foodDigestion('carbs', 40, 51 / 100)
-                ),
-                functions.beginsAfter({
-                    start: 0,
-                })
-            )
-        } duration={6*HOUR}/>
-
-        <FunctionPlot title="Exercise" id='exercise' fn={functions.exercise(1)} duration={2*HOUR}/>
-        <FunctionPlot title="Fiasp insulin active" id='insulin' fn={functions.fiaspInsulinActive(1)} duration={7*HOUR}/>
-        <FunctionPlot title="Food digestion (30g - Carbs)" id='insulin' fn={functions.foodDigestion('carbs', 30, 0.5)} duration={7*HOUR}/>
-        <FunctionPlot title="Food digestion (30g - Protein)" id='insulin' fn={functions.foodDigestion('protein', 30)} duration={7*HOUR}/>
+        <FunctionPlots/>
     </Box>
 }
 
+const testing = compose(
+    functions.foodDigestionEffect(
+        functions.foodDigestion('carbs', 40, 51 / 100)
+    ),
+    functions.beginsAfter({
+        start: 0,
+    })
+)
+
+const exerciseFn = functions.exercise(1)
+const insulinActive = functions.fiaspInsulinActive(1)
+const foodDigestionCarbs = functions.foodDigestion('carbs', 30, 0.5)
+const foodDigestionProtein = functions.foodDigestion('protein', 30)
+const basal = functions.basalEffect(0.7)
+
+const FunctionPlots = () => {
+    return <>
+        <FunctionPlot title="Testing" id='testing' fn={testing} duration={6*HOUR}/>
+        <FunctionPlot title="Exercise" id='exercise' fn={exerciseFn} duration={2*HOUR}/>
+        <FunctionPlot title="Fiasp insulin active" id='insulin' fn={insulinActive} duration={7*HOUR}/>
+        <FunctionPlot title="Food digestion (30g - Carbs)" id='insulin' fn={foodDigestionCarbs} duration={7*HOUR}/>
+        <FunctionPlot title="Food digestion (30g - Protein)" id='insulin' fn={foodDigestionProtein} duration={7*HOUR}/>
+        <FunctionPlot title="Basal rate" id='basal' fn={basal} duration={5*HOUR}/>
+    </>
+}
 
 import { ThemeProvider } from "@chakra-ui/core";
 
