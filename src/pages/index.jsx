@@ -14,7 +14,7 @@ const Plot = dynamic(
 )
 
 import latestGlucoseFeed from '../../data/glucose.json'
-import { functions, Model, exerciseEffect, MINUTE, HOUR, compose, parseEvents, BodyMetabolismModel, SECOND, parseEvents2 } from '../model';
+import { functions, Model, exerciseEffect, MINUTE, HOUR, compose, parseEvents, BodyMetabolismModel, SECOND } from '../model';
 import _ from 'lodash'
 import chrono from 'chrono-node'
 
@@ -145,15 +145,13 @@ const Graph = () => {
 
         let events
         try {
-            events = parseEvents(eventsText)
-            
             // Output some stats.
-            const eventRecords = parseEvents2(eventsText)
-            console.log(eventRecords.filter(x => x.type == 'insulin'))
-            const totalInsulin = eventRecords.filter(x => x.type == 'insulin').reduce((prev, curr) => {
+            events = parseEvents(eventsText)
+            console.log(events.filter(x => x.type == 'insulin'))
+            const totalInsulin = events.filter(x => x.type == 'insulin').reduce((prev, curr) => {
                 return prev + curr.amount
             }, 0)
-            const totalCarbs = eventRecords.filter(x => x.type == 'food').reduce((prev, curr) => {
+            const totalCarbs = events.filter(x => x.type == 'food').reduce((prev, curr) => {
                 return prev + curr.amount
             }, 0)
             console.log(`Total insulin:`, totalInsulin, 'U')
