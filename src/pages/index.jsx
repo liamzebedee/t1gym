@@ -125,6 +125,14 @@ import { Select, Button } from "@chakra-ui/core";
 // import * from '@chakra-ui/core'
 
 
+
+function debouncedOnChange(setter) {
+    const debounced = _.debounce(setter, 150)
+    return e => {
+        debounced(e.target.value)
+    }
+}
+
 const Graph = () => {
     const [annotations, setAnnotations] = useState([])
     const [fromTo, setFromTo] = useState([])
@@ -139,9 +147,12 @@ const Graph = () => {
         carbSensitivity: 2.9,
         insulinActive: 1.0
     })
-
+    const [bolusText, setBolus] = useState(`00.00 11g\n06.00 7g\n10.00 11g`)
+    const [basalText, setBasal] = useState('00.00 0.75\n08.00 0.60\n21.00 0.75')
+    console.log('Render')
     useEffect(() => {
         loadExperiments()
+    }, [])
 
         let events
         try {
@@ -300,9 +311,34 @@ const Graph = () => {
                     <Textarea
                         height={275}
                         id='events'
-                        value={eventsText}
-                        onChange={e => setEventsText(e.target.value)}
+                        defaultValue={eventsText}
+                        onChange={debouncedOnChange(setEventsText)}
                         placeholder="Here is a sample placeholder"
+                        size="md"
+                    />
+                </FormControl>
+
+                
+                <FormControl>
+                    <FormLabel htmlFor="bolus-ratios">Bolus ratios</FormLabel>
+                    <Textarea
+                        height={110}
+                        id='bolus-ratios'
+                        defaultValue={bolusText}
+                        onChange={debouncedOnChange(setBolus)}
+                        placeholder="12.00 10g"
+                        size="md"
+                    />
+                </FormControl>
+
+                <FormControl>
+                    <FormLabel htmlFor="basal-ratios">Basal ratios</FormLabel>
+                    <Textarea
+                        height={110}
+                        id='basal-ratios'
+                        defaultValue={basalText}
+                        onChange={debouncedOnChange(setBasal)}
+                        placeholder="12.00 0.6"
                         size="md"
                     />
                 </FormControl>
