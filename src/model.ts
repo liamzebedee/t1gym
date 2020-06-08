@@ -198,6 +198,7 @@ export const functions = {
         }
     },
 
+
     // A window of time.
     // 0 until `start`, then returns elapsed mS up until a max of `duration`
     window({ start, duration }) {
@@ -226,7 +227,16 @@ export const compose = (...fns) =>
     )
 ;
 
-// Parse events list
+
+const chrono = require('chrono-node')
+const luxon = require('luxon')
+
+interface Event {
+    type: 'food' | 'exercise' | 'insulin'
+    start: number
+}
+
+// Parses event string into list of event records.
 // eg. <<<
 // 20/5/2020 begin
 // 2pm food 20g carbs 80
@@ -234,13 +244,10 @@ export const compose = (...fns) =>
 // 4pm insulin 12.1
 // 5pm exercise 30mins .8
 // >>>
-const chrono = require('chrono-node')
-const luxon = require('luxon')
-
-export function parseEvents(events) {
+export function parseEvents(eventsString): Event[] {
     let referenceDate = luxon.DateTime.local()
 
-    return events.split(`\n`).map(l => l.trim()).filter(x => !!x).map(line => {
+    return eventsString.split(`\n`).map(l => l.trim()).filter(x => !!x).map(line => {
         const parts = line.split(' ')
         
         function parseTime(time) {
@@ -272,7 +279,40 @@ export function parseEvents(events) {
             if(foodType == 'carbs') {
                 gi = parseFloat(parts[4])
             }
-            console.debug(start, type, amount, foodType, gi)
+            return {
+                type,
+                amount,
+                start,
+                foodType,
+                gi
+            }
+        }
+        if(type == 'insulin') {
+            const amount = parseFloat(parts[2])
+            console.debug(start, type, amount)
+            return {
+                type,
+                start,
+                amount
+            }
+        }
+        if(type == 'exercise') {
+            const duration = parseFloat(parts[2].replace('mins','')) // ignore mins suffix
+            const intensity = parseFloat(parts[3])
+            return {
+                type,
+                intensity,
+                start,
+                duration: duration*MINUTE
+            }
+        }
+    }).filter(x => !!x) // identity
+}
+
+export function eventToFunction(event) {
+    switch(event.type) {
+        case 'food': {
+            const { foodType, amount, gi, start } = event
             return compose(
                 functions.foodDigestionEffect(
                     functions.foodDigestion(foodType, amount, gi / 100)
@@ -282,9 +322,18 @@ export function parseEvents(events) {
                 })
             )
         }
-        if(type == 'insulin') {
-            const amount = parseFloat(parts[2])
-            console.debug(start, type, amount)
+        case 'exercise': {
+            const { intensity, duration, start } = event
+            return compose(
+                functions.exercise(intensity),
+                functions.window({
+                    start,
+                    duration: duration*MINUTE
+                })
+            )
+        }
+        case 'insulin': {
+            const { amount, start } = event
             return compose(
                 functions.insulinGlucoseEffect(
                     functions.fiaspInsulinActive(amount)
@@ -294,19 +343,9 @@ export function parseEvents(events) {
                 })
             )
         }
-        if(type == 'exercise') {
-            const duration = parseFloat(parts[2].replace('mins','')) // ignore mins suffix
-            const intensity = parseFloat(parts[3])
-            
-            return compose(
-                functions.exercise(intensity),
-                functions.window({
-                    start,
-                    duration: duration*MINUTE
-                })
-            )
-        }
-    }).filter(x => !!x) // identity
+        default: 
+            throw new Error(`Unknown event type ${event.type}`)
+    }
 }
 
 class Model {
@@ -325,7 +364,7 @@ class Model {
         // Step.
 
         // Initial params.
-        let startDate = observed[0].date
+        let startDate = _.first(observed).date
         let startSGV = observed[0].sgv
         let until = _.last(observed).date
 
@@ -333,13 +372,12 @@ class Model {
         metabolism = model
         // metabolism = new BodyMetabolismModel()
         // Effects
-        let effects = [
+        let imperativeEffects = [
             // BackgroundGlucoseEffect,
         ]
 
         // console.log(userEvents)
-        const functionalEffects = [].concat(events)
-
+        const functionalEffects = [].concat(events.map(eventToFunction))
 
         // Current state
         let date = startDate
@@ -347,7 +385,7 @@ class Model {
 
         const STEP_SIZE = 1*MINUTE // 30s
         for(; date <= until + intoFuture; date += STEP_SIZE) {
-            effects.map(effect => {
+            imperativeEffects.map(effect => {
                 sgv += effect({ date, sgv, duration: STEP_SIZE })
             })
 
