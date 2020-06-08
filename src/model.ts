@@ -163,9 +163,7 @@ export const functions = {
     },
 
     insulinGlucoseEffect(insulinActive) {
-        // const insulinActive = functions.fiaspInsulinActive(amount)
-        return (u, b, c) => {
-            // console.log(u, b, c, insulinActive(u), metabolism.getInsulinSensitivity())
+        return (u) => {
             return insulinActive(u) * metabolism.getInsulinSensitivity()
         }
     },

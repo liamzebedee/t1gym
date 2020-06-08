@@ -111,7 +111,7 @@ function getData(glucoseFeed, fromTo, events, model) {
     }
 
     // Run simulation.
-    let predicted = Model.simulate(observed1,1*HOUR, events, model)
+    let predicted = Model.simulate(observed1, 3*HOUR, events, model)
 
     // Convert to Plotly format.
     return {
@@ -154,6 +154,8 @@ const Graph = () => {
         loadExperiments()
     }, [])
 
+    useEffect(() => {
+        console.log(glucoseFeed, fromTo, eventsText, model)
         let events
         try {
             // Output some stats.
@@ -220,12 +222,12 @@ const Graph = () => {
         } // The <select> title was clicked.
 
         let { glucoseFeed, observed, eventsText, fromTo } = experiments[i]
-        // setGlucoseFeed(glucoseFeed)
-        setObserved(observed)
+        setGlucoseFeed(glucoseFeed)
+        // setObserved(observed)
         setEventsText(eventsText)
         setFromTo(fromTo)
     }
-
+    
     return <Box p="5">
         <Flex align="center">
             <Heading as="h5" size="sm">
@@ -235,7 +237,7 @@ const Graph = () => {
                 <Select size="sm" placeholder="Choose experiment..." onChange={ev => loadExperiment(ev.target.value)}>
                     {
                         experiments.map((experiment, i) => {
-                            return <option value={`${i}`}>Experiment {i}</option>
+                            return <option key={i} value={`${i}`}>Experiment {i}</option>
                         })
                     }
                 </Select>
@@ -301,6 +303,7 @@ const Graph = () => {
                 }} 
             />
             </Flex>
+
             <Flex align="right" flexDirection="column" align="top">
                 <Heading as="h5" size="md">
                     Model
@@ -382,7 +385,7 @@ const Graph = () => {
                         </div>
                     </FormControl>
 
-                    <FormControl>
+                    {/* <FormControl>
                         <FormLabel htmlFor="carb-sensitivity">💉⏱ Insulin active</FormLabel>
                         <NumberInput size="sm" defaultValue={model.insulinActive} precision={1} min={0} step={0.1}
                             onChange={v => {
@@ -394,7 +397,7 @@ const Graph = () => {
                             <NumberDecrementStepper />
                             </NumberInputStepper>
                         </NumberInput>
-                    </FormControl>
+                    </FormControl> */}
                 </Stack>
             </Flex>
         </Flex>
