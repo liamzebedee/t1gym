@@ -28,4 +28,21 @@ $ npm run dev
 NIGHTSCOUT_ENDPOINT_URL=https://<NIGHTSCOUT_SERVER>.herokuapp.com ./scripts/get-data.sh
 ```
 
-Then you can start adding events and simulating different changes to your parameters.
+Then you can start adding events and simulating different changes to your parameters. 
+Here's a sample of events you can paste and use (implemented in `src/pages/helpers.ts`):
+
+```bash
+20/5/2020 begin
+
+# TIME food AMOUNT (carbs/protein) GLYCEMIC_INDEX
+14.00 food 20g carbs 80
+15.00 food 20g protein
+16.00 insulin 12.1
+
+# Bolus/correct uses the specified pump ratios.
+16.00 bolus 50g
+16.00 correct 12.5
+
+# TIME exercise DURATION INTENSITY
+17.00 exercise 30mins .8
+```
