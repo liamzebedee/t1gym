@@ -1,21 +1,13 @@
 
 const _ = require('lodash')
-const {step, linear} = require('everpolate')
+const {linear} = require('everpolate')
 
 type GlucoseFeed = BGLMeasurement[]
-
-// in ms
-type Duration = number
 
 interface BGLMeasurement {
     sgv: number
     date: number // timestamp
 }
-
-
-/**
- * step(t: time, sgv: number, duration) -> t + duration, sgv'
- */
 
 // Common time units in ms.
 export const SECOND = 1000
@@ -28,11 +20,7 @@ function BackgroundGlucoseEffect({ sgv, date, duration }) {
     return (duration / d[0]) * d[1]
 }
 
-
 export class BodyMetabolismModel {
-    // insulinSensitivity = -2
-    // carbSensitivity = 4.5 / 15
-    // insulinActive
     public insulinSensitivity
     public carbSensitivity
     public insulinActive
@@ -46,11 +34,9 @@ export class BodyMetabolismModel {
         return this.insulinSensitivity
     }
 
-    // 10g of carbs raises x mmol
+    // Carb sensitivity is the ratio of 1g of carbs raising x mmol.
     getCarbSensitivty(): number {
-        // return 0.22
         return this.carbSensitivity
-        // return this.carbSensitivity / 10.
     }
 }
 
@@ -62,6 +48,7 @@ let metabolism = new BodyMetabolismModel({
 
 // Fiasp insulin model.
 // HOUR IOB
+// TODO: use the actual exponential curve they defined in the paper.
 export let fiaspInsulinModel = `
 0	0
 0.5	41
@@ -75,21 +62,6 @@ export let fiaspInsulinModel = `
 4.5	97
 5	100
 `.split('\n').filter(x => !!x).map(line => line.match(/\S+/g).map(x => parseFloat(x)))
-// console.log('fiasp', fiaspInsulinModel)
-
-type MealType = 'protein' | 'carbs'
-interface FoodEffect {
-    mealType: MealType
-    amount: number
-    glycemicIndex: number
-}
-
-const ExerciseIntensity = {
-    Cardio: 0.8,
-    Core: 0.4,
-}
-
-const BURN_RATE = (-6 / (60*MINUTE))
 
 /**
  * An example of how to use/compose these functions:
@@ -125,17 +97,15 @@ const BURN_RATE = (-6 / (60*MINUTE))
 export const functions = {
     exercise(intensity) {
         return u => 
-            // (intensity) * (u*BURN_RATE)
-            intensity * -6 / (60*MINUTE / u)
+            intensity * -6 / (60*MINUTE / u) // burn -6mmol every 60 minutes of exercise
     },
 
-    // Insulin active
     // Returns insulin active at t hours, capping at amount when all insulin is released.
     fiaspInsulinActive(amount) {
         return u => {
-            // scale u by slowness
+            // Scale u by slowness
+            // TODO: testing ideas.
             const u1 = u / 0.9
-            // const u1 = u * metabolism.getInsulinActive()
             const y = linear(
                 [u1 / HOUR],
                 fiaspInsulinModel.map(a => a[0]),
@@ -147,28 +117,33 @@ export const functions = {
         }
     },
 
+    // Returns insulin's effect on glucose levels, given an insulin active curve.
     insulinGlucoseEffect(insulinActive) {
         return (u) => {
             return insulinActive(u) * metabolism.getInsulinSensitivity()
         }
     },
 
+    /*
+     * Returns food digested at t hours, capping at amount when all food is digested.
+     * @param {string} type Type of food, 'protein' or 'carbs'.
+     * @param {Number} amount The grams of carbs or protein in the food.
+     * @param {float} glycemicIndex The glycemic index, ranging from 1 (jellybeans) to 0 (slow-release foods).
+     */
     foodDigestion(type, amount, glycemicIndex) {
         let amount2 = amount
         if(type == 'protein') {
+            // Protein rule-of-thumb: it requires 1/5th the amount of insulin 
+            // as carbs.
             amount2 /= 5
             const PROTEIN_DEFAULT_GI = 0.4
             if(!glycemicIndex) glycemicIndex = PROTEIN_DEFAULT_GI
         }
 
         return u => {
-            // linear release
-
-            // say release time is 5% every 10 mins
-            // 10/5 is per ms.
-
-            // 6*HOUR : GI 1.
-            // 
+            // Linear release
+            // This model assumes a food with GI 0 is released over a maximum of 6 hours.
+            // TOOD: need to adjust this.
             const duration = (1-glycemicIndex) * 6*HOUR
             return amount2 * Math.min(u, duration) / duration
         }
@@ -176,7 +151,6 @@ export const functions = {
 
     foodDigestionEffect(foodDigestion) {
         return (u) => {
-            // console.log(u, b, c, insulinActive(u), metabolism.getInsulinSensitivity())
             return foodDigestion(u) * metabolism.getCarbSensitivty()
         }
     },
@@ -224,20 +198,29 @@ export const compose = (...fns) =>
 ;
 
 
-const chrono = require('chrono-node')
-
-
 class Model {
     sgv
     date
 
     constructor({}) {}
 
+    /**
+     * Runs the simulation for the length of the `observed` glucose feed, plus time `intoFuture`.
+     * 
+     * The model is composed of parameters (BodyMetabolismModel) and a list of effects 
+     * (`functionalEffects` and `imperativeEffects`).
+     * 
+     * A discrete timestep simulation is run, which generates an (x,y) pair of (time, bgl).
+     * The blood glucose level (bgl) can be affected by functions termed "effects".
+     * These functions take the date as input, and output a positive or negative `y` value
+     * which represents change in glucose. For example, using `functions.exercise`, one can
+     * model the effect that exercise has on reducing blood sugars. 
+     */
     static simulate(observed: GlucoseFeed, intoFuture: number = 0, functionalEffects: Function[], model: BodyMetabolismModel): GlucoseFeed {
         if(!observed.length) {
             return []
-            console.debug("No entries")
         }
+
         let d = []
         
         // Step.
@@ -249,7 +232,7 @@ class Model {
 
         // Model
         metabolism = model
-        // metabolism = new BodyMetabolismModel()
+
         // Effects
         let imperativeEffects = [
             // BackgroundGlucoseEffect,
@@ -259,7 +242,7 @@ class Model {
         let date = startDate
         let sgv = startSGV
 
-        const STEP_SIZE = 1*MINUTE // 30s
+        const STEP_SIZE = 1*MINUTE
         for(; date <= until + intoFuture; date += STEP_SIZE) {
             imperativeEffects.map(effect => {
                 sgv += effect({ date, sgv, duration: STEP_SIZE })

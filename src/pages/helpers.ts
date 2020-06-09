@@ -1,6 +1,4 @@
 import { MINUTE, functions, compose } from "../model"
-import IntervalTree from 'node-interval-tree'
-
 
 const luxon = require('luxon')
 
