@@ -415,7 +415,13 @@ const testing = compose(
     })
 )
 
-const exerciseFn = functions.exercise(1)
+const exerciseFn = compose(
+    functions.exercise(0.8),
+    functions.window({
+        start: 0,
+        duration: 30*MINUTE
+    })
+)
 const insulinActive = functions.fiaspInsulinActive(1)
 const foodDigestionCarbs = functions.foodDigestion('carbs', 30, 0.5)
 const foodDigestionProtein = functions.foodDigestion('protein', 30)
@@ -424,7 +430,7 @@ const basal = functions.basalEffect(0.7)
 const FunctionPlots = () => {
     return <>
         <FunctionPlot title="Testing" id='testing' fn={testing} duration={6*HOUR}/>
-        <FunctionPlot title="Exercise" id='exercise' fn={exerciseFn} duration={2*HOUR}/>
+        <FunctionPlot title="Exercise (80% intensity, duration 30mins)" id='exercise' fn={exerciseFn} duration={2*HOUR}/>
         <FunctionPlot title="Fiasp insulin active" id='insulin' fn={insulinActive} duration={7*HOUR}/>
         <FunctionPlot title="Food digestion (30g - Carbs)" id='insulin' fn={foodDigestionCarbs} duration={7*HOUR}/>
         <FunctionPlot title="Food digestion (30g - Protein)" id='insulin' fn={foodDigestionProtein} duration={7*HOUR}/>
