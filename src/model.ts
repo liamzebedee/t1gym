@@ -43,30 +43,14 @@ export class BodyMetabolismModel {
 
     // Insulin sensitivity is the ratio of 1 insulin unit : x mmol blood glucose reduction.
     getInsulinSensitivity(): number {
-        // return -2.2
         return this.insulinSensitivity
     }
 
     // 10g of carbs raises x mmol
     getCarbSensitivty(): number {
-        // 15g carb raises BGL by 3mmol
-        // 15/3
-        // return .2 * 1.5
-        // bolus ratio
-        // 8g : 1U
-        // 8g = 1U
-
-        // return -1 * this.getInsulinSensitivity() / 8
-        // const carbs = 15
-        // const mmol = 4.5
-        // return mmol / carbs
-
-        return this.carbSensitivity / 10.
-    }
-
-    // Gets
-    getInsulinActive(): number {
-        return this.insulinActive
+        // return 0.22
+        return this.carbSensitivity
+        // return this.carbSensitivity / 10.
     }
 }
 
@@ -141,7 +125,8 @@ const BURN_RATE = (-6 / (60*MINUTE))
 export const functions = {
     exercise(intensity) {
         return u => 
-            (intensity) * (u*BURN_RATE)
+            // (intensity) * (u*BURN_RATE)
+            intensity * -6 / (60*MINUTE / u)
     },
 
     // Insulin active
@@ -149,8 +134,8 @@ export const functions = {
     fiaspInsulinActive(amount) {
         return u => {
             // scale u by slowness
-            // const u1 = u / 1.5
-            const u1 = u * metabolism.getInsulinActive()
+            const u1 = u / 0.9
+            // const u1 = u * metabolism.getInsulinActive()
             const y = linear(
                 [u1 / HOUR],
                 fiaspInsulinModel.map(a => a[0]),
@@ -240,135 +225,7 @@ export const compose = (...fns) =>
 
 
 const chrono = require('chrono-node')
-const luxon = require('luxon')
 
-interface Event {
-    type: 'food' | 'exercise' | 'insulin'
-    start: number
-}
-
-// Parses event string into list of event records.
-// eg. <<<
-// 20/5/2020 begin
-// 2pm food 20g carbs 80
-// 3pm food 20g protein
-// 4pm insulin 12.1
-// 5pm exercise 30mins .8
-// >>>
-export function parseEvents(eventsString): Event[] {
-    let referenceDate = luxon.DateTime.local()
-
-    return eventsString.split(`\n`).map(l => l.trim()).filter(x => !!x).map(line => {
-        const parts = line.split(' ')
-        
-        function parseTime(time) {
-            const [hour,minute] = time.split('.')
-            return {
-                hour, 
-                minute
-            }
-        }
-        
-        const type = parts[1]
-        if(type == 'begin') {
-            // parse dd/mm/yyyy
-            const [dd,mm,yyyy] = parts[0].split('/')
-            referenceDate = referenceDate.set({
-                year: yyyy,
-                month: mm,
-                day: dd
-            })
-            return
-        }
-
-        const start = referenceDate.set(parseTime(parts[0])).toMillis()
-        
-        if(type == 'food') {
-            const amount = parseFloat(parts[2].replace('g','')) // ignore g suffix
-            const foodType = parts[3]
-            let gi
-            if(foodType == 'carbs') {
-                gi = parseFloat(parts[4])
-            }
-            return {
-                type,
-                amount,
-                start,
-                foodType,
-                gi
-            }
-        }
-        if(type == 'insulin') {
-            const amount = parseFloat(parts[2])
-            console.debug(start, type, amount)
-            return {
-                type,
-                start,
-                amount
-            }
-        }
-        if(type == 'exercise') {
-            const duration = parseFloat(parts[2].replace('mins','')) // ignore mins suffix
-            const intensity = parseFloat(parts[3])
-            return {
-                type,
-                intensity,
-                start,
-                duration: duration*MINUTE
-            }
-        }
-    }).filter(x => !!x) // identity
-}
-
-export function eventToFunction(event) {
-    switch(event.type) {
-        case 'food': {
-            const { foodType, amount, gi, start } = event
-            return compose(
-                functions.foodDigestionEffect(
-                    functions.foodDigestion(foodType, amount, gi / 100)
-                ),
-                functions.beginsAfter({
-                    start,
-                })
-            )
-        }
-        case 'exercise': {
-            const { intensity, duration, start } = event
-            return compose(
-                functions.exercise(intensity),
-                functions.window({
-                    start,
-                    duration: duration*MINUTE
-                })
-            )
-        }
-        case 'insulin': {
-            const { amount, start } = event
-            return compose(
-                functions.insulinGlucoseEffect(
-                    functions.fiaspInsulinActive(amount)
-                ),
-                functions.beginsAfter({
-                    start,
-                })
-            )
-        }
-        case 'basal': {
-            const { start, amount } = event
-            return compose(
-                functions.basalEffect(
-                    amount
-                ),
-                functions.beginsAfter({
-                    start
-                })
-            )
-        }
-        default: 
-            throw new Error(`Unknown event type ${event.type}`)
-    }
-}
 
 class Model {
     sgv
@@ -376,7 +233,7 @@ class Model {
 
     constructor({}) {}
 
-    static simulate(observed: GlucoseFeed, intoFuture: number = 0, events: Function[], model: BodyMetabolismModel): GlucoseFeed {
+    static simulate(observed: GlucoseFeed, intoFuture: number = 0, functionalEffects: Function[], model: BodyMetabolismModel): GlucoseFeed {
         if(!observed.length) {
             return []
             console.debug("No entries")
@@ -395,11 +252,8 @@ class Model {
         // metabolism = new BodyMetabolismModel()
         // Effects
         let imperativeEffects = [
-            BackgroundGlucoseEffect,
+            // BackgroundGlucoseEffect,
         ]
-
-        // console.log(userEvents)
-        const functionalEffects = [].concat(events.map(eventToFunction))
 
         // Current state
         let date = startDate

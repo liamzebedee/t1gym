@@ -14,7 +14,8 @@ const Plot = dynamic(
 )
 
 import latestGlucoseFeed from '../../data/glucose.json'
-import { functions, Model, exerciseEffect, MINUTE, HOUR, compose, parseEvents, BodyMetabolismModel, SECOND } from '../model';
+import { functions, Model, exerciseEffect, MINUTE, HOUR, compose, BodyMetabolismModel, SECOND } from '../model';
+import { parseEvents, parseRatios, eventToFunction, InsulinPumpModel } from './helpers'
 import _ from 'lodash'
 import chrono from 'chrono-node'
 
@@ -93,8 +94,6 @@ const FunctionPlot = ({ fn, duration, id, title }) => {
     </>
 }
 
-
-
 function getData(glucoseFeed, fromTo, events, model) {
     // Convert data from raw NightScout JSON.
     let observed = convertData(glucoseFeed)
@@ -111,7 +110,7 @@ function getData(glucoseFeed, fromTo, events, model) {
     }
 
     // Run simulation.
-    let predicted = Model.simulate(observed1, 3*HOUR, events, model)
+    let predicted = Model.simulate(observed1, 3*HOUR, events.map(eventToFunction), model)
 
     // Convert to Plotly format.
     return {
@@ -133,6 +132,13 @@ function debouncedOnChange(setter) {
     }
 }
 
+function debouncedOnChangeNumberInput(setter) {
+    const debounced = _.debounce(setter, 250)
+    return e => {
+        debounced(e)
+    }
+}
+
 const Graph = () => {
     const [annotations, setAnnotations] = useState([])
     const [fromTo, setFromTo] = useState([])
@@ -142,24 +148,44 @@ const Graph = () => {
     const [observed, setObserved] = useState([])
     const [predicted, setPredicted] = useState([])
     const [eventsText, setEventsText] = useState('')
-    const [model, setModel] = useState({
-        insulinSensitivity: -2.0,
-        carbSensitivity: 2.9,
-        insulinActive: 1.0
-    })
+
+    // Body metabolism model.
+    const [insulinSensitivity, setInsulinSensitivity] = useState(-1.8)
+    const [carbSensitivity, setCarbSensitivity] = useState(0.27)
+
+    // Insulin pump settings model.
     const [bolusText, setBolus] = useState(`00.00 11g\n06.00 7g\n10.00 11g`)
     const [basalText, setBasal] = useState('00.00 0.75\n08.00 0.60\n21.00 0.75')
-    console.log('Render')
+    const [correctionText, setCorrection] = useState(`00.00 2.5\n06.00 2.2`)
+
     useEffect(() => {
         loadExperiments()
     }, [])
 
+    const [stats, setStats] = useState({
+        totalInsulin: 0,
+        totalCarbs: 0,
+        events: []
+    })
+
     useEffect(() => {
-        console.log(glucoseFeed, fromTo, eventsText, model)
         let events
         try {
-            // Output some stats.
-            events = parseEvents(eventsText)
+            const bolusRatios = parseRatios(bolusText)
+            const basalRatios = parseRatios(basalText)
+            const correctionRatios = parseRatios(correctionText)
+
+            console.log(bolusRatios, basalRatios, correctionRatios)
+            
+            // Parse insulin pump model settings.
+            const insulinPumpModel = new InsulinPumpModel({
+                bolusRatios,
+                basalRatios,
+                correctionRatios
+            })
+
+            // Parse events.
+            events = parseEvents(eventsText, insulinPumpModel)
             console.log(events.filter(x => x.type == 'insulin'))
             const totalInsulin = events.filter(x => x.type == 'insulin').reduce((prev, curr) => {
                 return prev + curr.amount
@@ -167,8 +193,12 @@ const Graph = () => {
             const totalCarbs = events.filter(x => x.type == 'food').reduce((prev, curr) => {
                 return prev + curr.amount
             }, 0)
-            console.log(`Total insulin:`, totalInsulin, 'U')
-            console.log(`Total carbs:`, totalCarbs, 'g')
+
+            setStats({
+                totalInsulin,
+                totalCarbs,
+                events
+            })
         } catch(ex) {
             console.log(ex)
             // didn't validate
@@ -177,11 +207,14 @@ const Graph = () => {
 
         const { observed, predicted } = getData(
             glucoseFeed, fromTo, events,
-            new BodyMetabolismModel(model)
+            new BodyMetabolismModel({
+                insulinSensitivity: parseFloat(insulinSensitivity),
+                carbSensitivity: parseFloat(carbSensitivity)
+            })
         )
         setObserved(observed)
         setPredicted(predicted)
-    }, [glucoseFeed, fromTo, eventsText, model])
+    }, [glucoseFeed, fromTo, eventsText, insulinSensitivity, carbSensitivity, bolusText, basalText, correctionText])
 
     function clearTimeFilter() {
         setFromTo([])
@@ -304,7 +337,7 @@ const Graph = () => {
             />
             </Flex>
 
-            <Flex align="right" flexDirection="column" align="top">
+            <Flex flexGrow={1} align="right" flexDirection="column" align="top">
                 <Heading as="h5" size="md">
                     Model
                 </Heading>
@@ -321,6 +354,11 @@ const Graph = () => {
                     />
                 </FormControl>
 
+                <Flex align="right" flexDirection="row">
+                    <span><b>Total insulin</b>: {stats.totalInsulin.toFixed(2)}U</span>
+                    <Box paddingRight="5"></Box>
+                    <span><b>Total carbs</b>: {stats.totalCarbs}g</span>
+                </Flex>
                 
                 <FormControl>
                     <FormLabel htmlFor="bolus-ratios">Bolus ratios</FormLabel>
@@ -345,21 +383,30 @@ const Graph = () => {
                         size="md"
                     />
                 </FormControl>
+
+                <FormControl>
+                    <FormLabel htmlFor="basal-ratios">Correction ratios</FormLabel>
+                    <Textarea
+                        height={110}
+                        id='correction-ratios'
+                        defaultValue={correctionText}
+                        onChange={debouncedOnChange(setCorrection)}
+                        placeholder="12.00 1.8"
+                        size="md"
+                    />
+                </FormControl>
                 
                 <div>
-                    
                     <label><strong>Time filter</strong>: { fromTo.length == 2 ? 'set' : 'unset' }</label>
                     <Button size="sm" onClick={clearTimeFilter}>Clear</Button>
                 </div>
 
                 <Stack shouldWrapChildren isInline>
                     <FormControl>
-                        <FormLabel htmlFor="carb-sensitivity">🍎 Carb. sensitivity (10g : x mmol)</FormLabel>
+                        <FormLabel htmlFor="carb-sensitivity">🍎 Carb. sensitivity (15g : x mmol)</FormLabel>
                         <NumberInput 
-                            id="carb-sensitivity" size="sm" defaultValue={model.carbSensitivity} precision={1} step={0.1} 
-                            onChange={v => {
-                                setModel({ ...model, carbSensitivity: parseFloat(v) })
-                            }}>
+                            id="carb-sensitivity" size="sm" defaultValue={carbSensitivity} precision={2} step={0.01} 
+                            onChange={debouncedOnChangeNumberInput(x => setCarbSensitivity(parseFloat(x)))}>
                             <NumberInputField />
                             <NumberInputStepper>
                             <NumberIncrementStepper />
@@ -369,20 +416,15 @@ const Graph = () => {
                     </FormControl>
 
                     <FormControl>
-                        <FormLabel htmlFor="carb-sensitivity">💉 Insulin sensitivity (1U : x mmol)</FormLabel>
-                        <NumberInput size="sm" defaultValue={model.insulinSensitivity} precision={1} min={-10} step={0.1} max={0}
-                            onChange={v => {
-                                setModel({ ...model, insulinSensitivity: parseFloat(v) })
-                            }}>
+                        <FormLabel htmlFor="insulin-sensitivity">💉 Insulin sensitivity (1U : x mmol)</FormLabel>
+                        <NumberInput size="sm" defaultValue={insulinSensitivity} precision={1} min={-10} step={0.1} max={0}
+                            onChange={debouncedOnChangeNumberInput(x => setInsulinSensitivity(parseFloat(x)))}>
                             <NumberInputField />
                             <NumberInputStepper>
                             <NumberIncrementStepper />
                             <NumberDecrementStepper />
                             </NumberInputStepper>
                         </NumberInput>
-                        <div>
-                            (1U : {(model.carbSensitivity / -1 * model.insulinSensitivity).toFixed(1)}g)
-                        </div>
                     </FormControl>
 
                     {/* <FormControl>
