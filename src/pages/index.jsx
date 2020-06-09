@@ -332,7 +332,30 @@ const Graph = () => {
                         range: [1, 20],
                         title: 'BGL'
                     },
-                    annotations,
+                    annotations: [
+                        ...stats.events.map(event => {
+                            return {
+                                x: formatPlotlyDate(new Date(event.start)),
+                                y: 4,
+                                // y: observed.
+                                xref: 'x',
+                                yref: 'y',
+                                text: `${({
+                                    'food': "🍎",
+                                    'insulin': "💉",
+                                    'exercise': "🏃‍♂️"
+                                })[event.type]} ${{
+                                    'correct': 'C',
+                                    'bolus': 'B',
+                                    '': ''
+                                }[event.intent || '']}`,
+                                showarrow: false,
+                                // arrowhead: 7,
+                                // ax: 0,
+                                ay: -40
+                            }
+                        })
+                    ],
                 }} 
             />
             </Flex>
