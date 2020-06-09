@@ -5,7 +5,7 @@ import IntervalTree from 'node-interval-tree'
 const luxon = require('luxon')
 
 interface Event {
-    type: 'food' | 'exercise' | 'insulin' | 'bolus' | 'correction'
+    type: 'food' | 'exercise' | 'insulin'
     start: number
 }
 
@@ -60,12 +60,12 @@ const GLUCOSE_DESIRED_LEVEL = 6.5
 // Parses event string into list of event records.
 // eg. <<<
 // 20/5/2020 begin
-// 2pm food 20g carbs 80
-// 3pm food 20g protein
-// 4pm insulin 12.1
-// 4pm bolus 50g
-// 4pm correction 12.5
-// 5pm exercise 30mins .8
+// 14.00 food 20g carbs 80
+// 15.00 food 20g protein
+// 16.00 insulin 12.1
+// 16.00 bolus 50g
+// 16.00 correct 12.5
+// 17.00 exercise 30mins .8
 // >>>
 export function parseEvents(eventsString, insulinPumpSettings: InsulinPumpModel): Event[] {
     let referenceDate = luxon.DateTime.local()
@@ -163,7 +163,8 @@ export function parseEvents(eventsString, insulinPumpSettings: InsulinPumpModel)
     }).filter(x => !!x) // identity
 }
 
-
+// Converts an Event into a function that can be 
+// graphed and simulated.
 export function eventToFunction(event) {
     switch(event.type) {
         case 'food': {
