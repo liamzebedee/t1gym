@@ -54,7 +54,7 @@ function convertData(d) {
         .map(d => {
             return {
                 ...d,
-                date: d.date + 10*SECOND,
+                date: d.date,
                 sgv: convertFromMgToMmol(d.sgv)
             }
         })
@@ -110,7 +110,8 @@ function getData(glucoseFeed, fromTo, events, model) {
     }
 
     // Run simulation.
-    let predicted = Model.simulate(observed1, 3*HOUR, events.map(eventToFunction), model)
+    const intoFuture = 0
+    let predicted = Model.simulate(observed1, intoFuture, events.map(eventToFunction), model)
 
     // Convert to Plotly format.
     return {
@@ -121,9 +122,6 @@ function getData(glucoseFeed, fromTo, events, model) {
 
 import { Textarea, NumberInputField, NumberInputStepper, NumberIncrementStepper, NumberDecrementStepper, NumberInput, Stack, FormControl, FormLabel, CSSReset, Heading, Box, Flex } from "@chakra-ui/core";
 import { Select, Button } from "@chakra-ui/core";
-// import * from '@chakra-ui/core'
-
-
 
 function debouncedOnChange(setter) {
     const debounced = _.debounce(setter, 150)
@@ -138,6 +136,36 @@ function debouncedOnChangeNumberInput(setter) {
         debounced(e)
     }
 }
+
+function getStartDate(fromTo) {
+    let date
+    if(!fromTo[0]) {
+        date = null
+    } else {
+        date = new Date(fromTo[0])
+    }
+    return date
+}
+
+function getEndDate(fromTo) {
+    let date
+    if(!fromTo[1]) {
+        date = null
+    } else {
+        date = new Date(fromTo[1])
+    }
+    return date
+}
+
+function debouncedDatetimeOnchange(setter) {
+    const debounced = _.debounce(setter, 500)
+    return e => {
+        debounced(e)
+    }
+}
+
+import DateTime from 'react-datetime'
+
 
 const Graph = () => {
     const [annotations, setAnnotations] = useState([])
@@ -165,6 +193,9 @@ const Graph = () => {
     const [stats, setStats] = useState({
         totalInsulin: 0,
         totalCarbs: 0,
+        startBG: 0,
+        endBG: 0,
+        deltaBG: 0,
         events: []
     })
 
@@ -197,23 +228,59 @@ const Graph = () => {
             setStats({
                 totalInsulin,
                 totalCarbs,
-                events
+                events,
+            })
+
+            const { observed, predicted } = getData(
+                glucoseFeed, fromTo, events,
+                new BodyMetabolismModel({
+                    insulinSensitivity: parseFloat(insulinSensitivity),
+                    carbSensitivity: parseFloat(carbSensitivity)
+                })
+            )
+            setObserved(observed)
+            setPredicted(predicted)
+
+            // Find the start, end BG's.
+            // 
+
+            // TODO: this could be cleaner.
+            function getBG(record) { return record[1] }
+            let startBG = getBG(observed[0])
+            let endBG = getBG(_.last(observed))
+            
+            if(fromTo[0]) {
+                for(let [date, sgv] of observed) {
+                    if((new Date(date)) > fromTo[0]) {
+                        startBG = sgv
+                        break
+                    }
+                }
+            }
+            if(fromTo[1]) {
+                for(let [date, sgv] of observed.slice().reverse()) {
+                    if((new Date(date)) > fromTo[1]) {
+                        endBG = sgv
+                        break
+                    }
+                }
+            }
+            const deltaBG = endBG - startBG
+
+            setStats({
+                totalInsulin,
+                totalCarbs,
+                events,
+
+                startBG,
+                endBG,
+                deltaBG
             })
         } catch(ex) {
             console.log(ex)
             // didn't validate
             return
         }
-
-        const { observed, predicted } = getData(
-            glucoseFeed, fromTo, events,
-            new BodyMetabolismModel({
-                insulinSensitivity: parseFloat(insulinSensitivity),
-                carbSensitivity: parseFloat(carbSensitivity)
-            })
-        )
-        setObserved(observed)
-        setPredicted(predicted)
     }, [glucoseFeed, fromTo, eventsText, insulinSensitivity, carbSensitivity, bolusText, basalText, correctionText])
 
     function clearTimeFilter() {
@@ -297,11 +364,6 @@ const Graph = () => {
                         x,y
                     }))
                 }}
-                // onSelected={ev => {
-                //     const { range } = ev 
-                //     const [from, to] = range.x
-                //     setFromTo([from, to])
-                // }}
                 data={[
                     {
                         x: observed.map(a => a[0]),
@@ -362,13 +424,37 @@ const Graph = () => {
 
             <Flex flexGrow={1} align="right" flexDirection="column" align="top">
                 <Heading as="h5" size="md">
-                    Model
+                    Experiment
                 </Heading>
+                
+                <Stack shouldWrapChildren isInline>
+                    <FormControl>
+                        <FormLabel htmlFor="start-time">Start time</FormLabel>
+                        <DateTime name="start-time"
+                            value={getStartDate(fromTo)}
+                            onChange={debouncedDatetimeOnchange(val => {
+                                let updatedFromTo = fromTo.slice()
+                                updatedFromTo[0] = val._d.getTime()
+                                setFromTo(updatedFromTo)
+                            })}/>
+                    </FormControl>
+
+                    <FormControl>
+                        <FormLabel htmlFor="end-time">End time</FormLabel>
+                        <DateTime name="end-time"
+                            value={getEndDate(fromTo)}
+                            onChange={debouncedDatetimeOnchange(val => {
+                                let updatedFromTo = fromTo.slice()
+                                updatedFromTo[1] = val._d.getTime()
+                                setFromTo(updatedFromTo)
+                            })}/>
+                    </FormControl>
+                </Stack>
                 
                 <FormControl>
                     <FormLabel htmlFor="events">Events</FormLabel>
                     <Textarea
-                        height={275}
+                        height={120}
                         id='events'
                         defaultValue={eventsText}
                         onChange={debouncedOnChange(setEventsText)}
@@ -378,6 +464,12 @@ const Graph = () => {
                 </FormControl>
 
                 <Flex align="right" flexDirection="row">
+                    <span><b>Start BG</b>: {(stats.startBG || 0).toFixed(1)}mmol</span>
+                    <Box paddingRight="5"></Box>
+                    <span><b>End BG</b>: {(stats.endBG || 0).toFixed(1)}mmol</span>
+                    <Box paddingRight="5"></Box>
+                    <span><b>Δ BG</b>: {(stats.deltaBG || 0) > 1 ? '+' : '-'}{(stats.deltaBG || 0).toFixed(1)}mmol</span>
+                    <Box paddingRight="5"></Box>
                     <span><b>Total insulin</b>: {stats.totalInsulin.toFixed(2)}U</span>
                     <Box paddingRight="5"></Box>
                     <span><b>Total carbs</b>: {stats.totalCarbs}g</span>
