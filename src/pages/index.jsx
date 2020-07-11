@@ -19,11 +19,11 @@ import { parseEvents, parseRatios, eventToFunction, InsulinPumpModel } from './h
 import _ from 'lodash'
 import chrono from 'chrono-node'
 
-function convertFromMgToMmol(v) {
+export function convertFromMgToMmol(v) {
     return v / 18.
 }
 
-function formatPlotlyDate(dateObj) {
+export function formatPlotlyDate(dateObj) {
     let date, time
     let str = dateObj.toLocaleString().split(', ')
     // 2020-05-13 22:14
@@ -49,7 +49,7 @@ function toPlotlyFormat(data) {
 }
 
 // Convert American glucose units.
-function convertData(d) {
+export function convertData(d) {
     return d
         .map(d => {
             return {
