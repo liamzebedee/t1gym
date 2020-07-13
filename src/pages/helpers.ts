@@ -9,7 +9,7 @@ interface Event {
 
 import _ from 'lodash'
 
-function intervalSearch(intervals, x) {
+export function intervalSearch(intervals, x) {
     let y = _.last(intervals)
     for(let [bound, value] of intervals) {
         if(x > bound) y = value

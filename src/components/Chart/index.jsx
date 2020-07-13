@@ -1,6 +1,7 @@
 
 import * as d3 from "d3";
 import { useEffect, useRef, useState } from 'react';
+import { intervalSearch } from "../../pages/helpers";
 
 import { Duration, DateTime } from 'luxon'
 
@@ -96,23 +97,17 @@ import { Duration, DateTime } from 'luxon'
             gradientUnits="userSpaceOnUse"
             x1={0}
             x2={width}>
-            {data.map(d => {
+            {data.map((d, i) => {
                 function getStopColor(d) {
-                    if (d.sgv > 13) {
-                        return 'red'
-                    }
-                    if (d.sgv > 10) {
-                        return 'orange'
-                    }
-                    if (d.sgv < 3.9) {
-                        return 'red'
-                    }
-                    if (d.sgv < 5) {
-                        return 'orange'
-                    }
-                    else return 'green'
+                    return intervalSearch([
+                        [0, 'red'],
+                        [3.9, 'orange'],
+                        [5, 'green'],
+                        [10, 'orange'],
+                        [13, 'red']
+                    ], d.sgv)
                 }
-                return <stop offset={x(d.date) / width} stopColor={getStopColor(d)}/>
+                return <stop key={i} offset={x(d.date) / width} stopColor={getStopColor(d)}/>
             })}
         </linearGradient>
 
