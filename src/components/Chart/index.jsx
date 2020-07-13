@@ -2,7 +2,8 @@
 import * as d3 from "d3";
 import { useEffect, useRef, useState } from 'react';
 
-export const Chart = ({ data, onEndBrush }) => {
+import { Duration, DateTime } from 'luxon'
+
     let margin = { top: 1, right: 30, bottom: 30, left: 60 }
     const width = 900
     const height = 600
@@ -10,9 +11,26 @@ export const Chart = ({ data, onEndBrush }) => {
     // 
     // x and y curves.
     // 
+
+    // Domain is supposed to be a full day by default.
+    let extent = d3.extent(data, function (d) { return d.date })
+    function calcExtent(extent) {
+        let start = DateTime.fromJSDate(new Date(extent[0])).set({
+            hour: 0,
+            minute: 0
+        })
+        let end = start.plus({ days: 1 })
+        console.log([start, end].map(x=>x.toString()), new Date(start.toMillis()))
+        return [
+            start.toMillis(),
+            end.toMillis()
+        ]
+    }
+    
     var x = d3.scaleTime()
-        .domain(d3.extent(data, function (d) { return d.date }))
+        .domain(calcExtent(extent))
         .range([0, width])
+        .clamp(true)
 
     var y = d3.scaleLinear()
         .domain([0, 23])
