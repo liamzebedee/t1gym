@@ -54,7 +54,8 @@ import { Duration, DateTime } from 'luxon'
         .y(function (d) { return y(d.sgv) })
 
 
-    const bglColorId = "bg-color"
+    // The most ridiculously simple hack.
+    const bglColorId = "bg-color-"+Math.random()
 
     const inRangeShapeDescription = {
         start: 5,
