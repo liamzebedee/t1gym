@@ -22,6 +22,8 @@ export const TagsEditor = ({ value = [], onChange }) => {
             startWithEditView={0} 
             selectAllOnFocus={0}
             defaultValue={tagsToString(value)} 
+            // onChange={x => {}}
+            // value={}
             onSubmit={(text) => {
                 if (text.length === 0) return setTags([])
                 setTags(tagsStringToArr(text))

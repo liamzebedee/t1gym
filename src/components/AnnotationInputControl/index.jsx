@@ -18,7 +18,6 @@ export const AnnotationInputControl = ({ startTime, endTime, onSave, onDiscard }
 
     useEffect(() => {
         resetEditKey()
-        setTags([])
     }, [startTime, endTime])
 
     const [notes, setNotes] = useState('')
@@ -50,7 +49,7 @@ export const AnnotationInputControl = ({ startTime, endTime, onSave, onDiscard }
         onDiscard()
     }
 
-    return <div key={editKey}>
+    return <div>
         <Stack shouldWrapChildren>
             
             <Heading as="h3" size="md">
@@ -72,7 +71,7 @@ export const AnnotationInputControl = ({ startTime, endTime, onSave, onDiscard }
 
             <FormControl>
                 <FormLabel htmlFor="end-time">Event tags</FormLabel>
-                <TagsEditor onChange={handleTagsChange} value={tags} key={editKey} />
+                <TagsEditor onChange={handleTagsChange} key={editKey} />
             </FormControl>
 
             <FormControl>
