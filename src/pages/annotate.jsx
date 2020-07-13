@@ -12,12 +12,11 @@
 import { Textarea, NumberInputField, NumberInputStepper, NumberIncrementStepper, NumberDecrementStepper, NumberInput, Stack, FormControl, FormLabel, CSSReset, Heading, Box, Flex, IconButton, Button, ButtonGroup } from "@chakra-ui/core";
 
 import latestGlucoseFeed from '../../data/glucose.json'
-import { convertData, formatPlotlyDate } from './index'
+import { convertData, formatPlotlyDate } from './experiment'
 import * as d3 from "d3";
 import { useEffect, useRef, useState } from 'react';
 
 
-const data = convertData(latestGlucoseFeed)
 
 
 
@@ -28,7 +27,7 @@ import { AnnotationInputControl } from '../components/AnnotationInputControl'
 import { TagsEditor } from '../components/TagsEditor'
 
 
-const Annotator = () => {
+export const Annotator = ({ data }) => {
     const d3Container = useRef(null);
 
     let [brush, setBrush] = useState(null)
@@ -85,11 +84,12 @@ const Annotator = () => {
                         </>
                     }
                 }()}
-                
             </Flex>
         </Flex>
     </Box>
 }
+
+
 
 
 import { ThemeProvider } from "@chakra-ui/core";
@@ -100,6 +100,6 @@ import { Chart } from "../components/Chart";
 export default () => {
     return <ThemeProvider>
         <CSSReset />
-        <Annotator />
+        <Annotator data={convertData(latestGlucoseFeed)}/>
     </ThemeProvider>
 }
