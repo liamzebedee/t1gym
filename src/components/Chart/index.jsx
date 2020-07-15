@@ -5,6 +5,8 @@ import { intervalSearch } from "../../pages/helpers";
 
 import { Duration, DateTime } from 'luxon'
 
+    const data = _.sortBy(props.data, 'date')
+
     let margin = { top: 1, right: 30, bottom: 30, left: 60 }
     const width = 900
     const height = 600
