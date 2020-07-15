@@ -13,6 +13,14 @@ function useEditKey() {
     ]
 }
 
+/**
+ * @typedef {Object} Annotation
+ * @property {Date} startTime 
+ * @property {Date} endTime 
+ * @property {Array} tags 
+ * @property {string} notes
+ */
+
 export const AnnotationInputControl = ({ startTime, endTime, onSave, onDiscard }) => {
     let [ editKey, resetEditKey ] = useEditKey()
 
