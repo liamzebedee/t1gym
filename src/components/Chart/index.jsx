@@ -43,9 +43,18 @@ import { Duration, DateTime } from 'luxon'
             d3.axisLeft(y)
         )
     }
+
+    
+    let flip = false
     const axisRef2 = el => {
         el && d3.select(el).call(
             d3.axisBottom(x)
+            .ticks(d3.timeMinute.every(120))
+            .tickFormat(x => {
+                flip = !flip
+                if(flip) return ''
+                return d3.timeFormat("%I %p")(x)
+            })
         )
     }
 
