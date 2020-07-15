@@ -3,7 +3,7 @@ import { Duration, DateTime } from 'luxon'
 export default async (req, res) => {
 
     // Split data into day-by-day view.
-    const DAYS_TO_RETRIEVE = 7
+    const DAYS_TO_RETRIEVE = 14
     let referenceDate = DateTime.local()
         .minus({ days: DAYS_TO_RETRIEVE-1 })
         .set({

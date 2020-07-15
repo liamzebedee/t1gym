@@ -213,3 +213,25 @@ export function eventToFunction(event) {
             throw new Error(`Unknown event type ${event.type}`)
     }
 }
+
+import { DateTime } from 'luxon'
+import { useState } from "react"
+
+export function getStartOfDayForTime(time) {
+    return DateTime.fromJSDate(new Date(time)).set({
+        hour: 0,
+        minute: 0,
+        second: 0,
+        millisecond: 0
+    })
+}
+
+export function usePromiseLoadingState(fn1) {
+    let [loading, setLoading] = useState(null)
+    async function fn() {
+        setLoading(true)
+        await fn1(arguments)
+        setLoading(false)
+    }
+    return [fn, loading]
+}
