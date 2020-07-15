@@ -5,6 +5,7 @@ import { intervalSearch } from "../../pages/helpers";
 
 import { Duration, DateTime } from 'luxon'
 
+import { v4 as uuidv4 } from 'uuid';
     const data = _.sortBy(props.data, 'date')
 
     let margin = { top: 1, right: 30, bottom: 30, left: 60 }
@@ -67,7 +68,7 @@ import { Duration, DateTime } from 'luxon'
 
 
     // The most ridiculously simple hack.
-    const bglColorId = "bg-color-"+Math.random()
+    const bglColorId = `bg-color-${uuidv4()}`
 
     const inRangeShapeDescription = {
         start: 5,
