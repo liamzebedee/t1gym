@@ -6,6 +6,9 @@ import { intervalSearch } from "../../pages/helpers";
 import { Duration, DateTime } from 'luxon'
 
 import { v4 as uuidv4 } from 'uuid';
+
+export const Chart = (props) => {
+    let onEndBrush = props.onEndBrush || function(){}
     const data = _.sortBy(props.data, 'date')
 
     let margin = { top: 1, right: 30, bottom: 30, left: 60 }
