@@ -35,9 +35,9 @@ const Dashboard = () => {
         <Heading pt="5" pb="5">Type One Gym</Heading>
         <Tabs variant="soft-rounded" variantColor="green">
             <TabList>
-                <Tab>Trainer</Tab>
-                <Tab>Annotator</Tab>
-                <Tab>Scenarios</Tab>
+                <Tab>Overview</Tab>
+                <Tab>Analyse</Tab>
+                <Tab>Patterns</Tab>
             </TabList>
 
             <TabPanels>

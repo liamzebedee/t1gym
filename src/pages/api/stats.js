@@ -2,7 +2,7 @@ import { Duration, DateTime } from 'luxon'
 
 
 export default async (req, res) => {
-    const DAYS_TO_RETRIEVE = 7*8
+    const DAYS_TO_RETRIEVE = 7*5 // 5 weeks
     let today = DateTime.local()
     let toDate = today
     let fromDate = toDate
