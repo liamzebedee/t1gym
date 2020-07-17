@@ -69,18 +69,18 @@ export const ReportCard = ({ }) => {
 
         let data = []
         let days = dataToDayByDay(longitudalData)
-        setData(
-            days
-                .map(day => {
-                    const stats = calcStats(day)
-                    return {
-                        data: day,
-                        date: new Date(day[0].date),
-                        stats,
-                    }
-                })
-            // .reverse()
-        )
+        data = 
+            days.map(day => {
+                const stats = calcStats(day)
+                return {
+                    data: day,
+                    date: new Date(day[0].date),
+                    stats,
+                }
+            })
+        data = data.slice(firstMonday(data))
+        setData(data)
+                
         setStatistics(statistics)
     }
 
@@ -198,7 +198,7 @@ export const ReportCard = ({ }) => {
                 {data === null && <CircularProgress isIndeterminate size="sm" color="green" />}
                 <svg className={styles.reportCard} width={dimensions.width} height={dimensions.height} viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}>
                     <g transform={`translate(${margin.left}, ${margin.top})`}>
-                        {data && data.slice(firstMonday(data)).map((datum, i) => {
+                        {data && data.map((datum, i) => {
                             const { PGS } = datum.stats
 
                             const date = DateTime.fromJSDate(datum.date)
