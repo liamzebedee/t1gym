@@ -235,3 +235,21 @@ export function usePromiseLoadingState(fn1) {
     }
     return [fn, loading]
 }
+
+
+export function convertFromMgToMmol(v) {
+    return v / 18.
+}
+
+// Convert American glucose units.
+export function convertData(d) {
+    return d
+        .map(d => {
+            return {
+                ...d,
+                date: d.date,
+                sgv: convertFromMgToMmol(d.sgv)
+            }
+        })
+        .reverse()
+}

@@ -1,3 +1,4 @@
+// https://bl.ocks.org/Ro4052/caaf60c1e9afcd8ece95034ea91e1eaa
 import * as d3 from 'd3'
 import { StatGroup, Stat, StatLabel, StatNumber, StatHelpText, StatArrow, CircularProgress, Stack, Flex, Heading } from '@chakra-ui/core';
 
@@ -8,8 +9,8 @@ import { DateTime } from 'luxon'
 import * as _ from 'lodash'
 import { useEffect, useState, useCallback } from 'react';
 import { Chart } from '../Chart';
-import { convertData } from '../../pages/experiment';
 import styles from './styles.module.css'
+import { convertData } from '../../pages/helpers';
 
 function dataToDayByDay(longitudalData) {
     let data = _.sortBy(longitudalData, ['date'])

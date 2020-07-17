@@ -15,13 +15,10 @@ const Plot = dynamic(
 
 import latestGlucoseFeed from '../../data/glucose.json'
 import { functions, Model, exerciseEffect, MINUTE, HOUR, compose, BodyMetabolismModel, SECOND } from '../model';
-import { parseEvents, parseRatios, eventToFunction, InsulinPumpModel } from './helpers'
+import { parseEvents, parseRatios, eventToFunction, InsulinPumpModel, convertData } from './helpers'
 import _ from 'lodash'
 import chrono from 'chrono-node'
 
-export function convertFromMgToMmol(v) {
-    return v / 18.
-}
 
 export function formatPlotlyDate(dateObj) {
     let date, time
@@ -48,18 +45,6 @@ function toPlotlyFormat(data) {
     })
 }
 
-// Convert American glucose units.
-export function convertData(d) {
-    return d
-        .map(d => {
-            return {
-                ...d,
-                date: d.date,
-                sgv: convertFromMgToMmol(d.sgv)
-            }
-        })
-        .reverse()
-}
 
 
 let experiments = []

@@ -1,5 +1,5 @@
 // https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4543190/#!po=21.4286
-import { convertData, formatPlotlyDate } from './experiment'
+import { formatPlotlyDate } from './experiment'
 import * as d3 from "d3";
 import { useEffect, useRef, useState } from 'react';
 

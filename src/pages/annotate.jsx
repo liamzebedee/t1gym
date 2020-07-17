@@ -12,7 +12,7 @@
 import { Textarea, NumberInputField, NumberInputStepper, NumberIncrementStepper, NumberDecrementStepper, NumberInput, Stack, FormControl, FormLabel, CSSReset, Heading, Box, Flex, IconButton, Button, ButtonGroup } from "@chakra-ui/core";
 
 import latestGlucoseFeed from '../../data/glucose.json'
-import { convertData, formatPlotlyDate } from './experiment'
+import { formatPlotlyDate } from './experiment'
 import * as d3 from "d3";
 import { useEffect, useRef, useState } from 'react';
 
@@ -96,6 +96,7 @@ import { ThemeProvider } from "@chakra-ui/core";
 import { useReducer } from "react";
 import { useLayoutEffect } from "react";
 import { Chart } from "../components/Chart";
+import { convertData } from "./helpers";
 
 export default () => {
     return <ThemeProvider>
