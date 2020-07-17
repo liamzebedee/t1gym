@@ -133,26 +133,7 @@ export const ReportCard = ({ }) => {
         height: margin.top + ROW_HEIGHT * (days / 7)
     }
 
-    const [hoveredDay, setHoveredDay] = useState(null)
-    const [selectedDay, setSelectedDay] = useState(null)
-
-    function _onHoverDay(i) {
-        setHoveredDay(i)
-    }
-    const onHoverDay = useCallback(_onHoverDay)
-
-    function _onSelectDay(i) {
-        setSelectedDay(i)
-    }
-    const onSelectDay = useCallback(_onSelectDay)
-
-    let previewedDay = null
-    if (selectedDay !== null) previewedDay = selectedDay
-    else if (hoveredDay !== null) previewedDay = hoveredDay
-
-
-
-
+    const [previewedDay, selectedDay, hoveredDay, onHoverDay, onSelectDay] = useHoverPickSelector()
 
     return <>
         <Flex direction="row">
@@ -215,6 +196,7 @@ export const ReportCard = ({ }) => {
                             return <g key={i}
                                 transform={`translate(${ROW_WIDTH * (i % 7)}, ${ROW_HEIGHT * Math.floor(i / 7)} )`}
                                 onMouseEnter={() => onHoverDay(i)}
+                                onMouseLeave={() => onHoverDay(null)}
                                 onClick={() => onSelectDay(i)}
                                 className={`${styles.day} ${i === selectedDay && styles.active}`}
                                 width={ROW_WIDTH} height={ROW_HEIGHT}

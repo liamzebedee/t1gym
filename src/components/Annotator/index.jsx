@@ -8,6 +8,7 @@ import { AnnotationInputControl } from '../AnnotationInputControl';
 import { Chart } from "../Chart";
 import styles from './styles.module.css'
 import { Table, TableRow, TableCell, TableHead, TableHeader, TableBody } from "../Table";
+import { useHoverPickSelector } from "../../misc/hooks";
 
 const Annotation = ({ startTime, endTime, tags, notes, active }) => {
     const start = DateTime.fromJSDate(startTime)
@@ -68,10 +69,7 @@ export const Annotator = (props) => {
         setBrush(null)
     }
 
-    const [selectedAnnotation, setSelectedAnnotation] = useState(null)
-    function onSelectAnnotation(annotationIdx) {
-        setSelectedAnnotation(annotationIdx)
-    }
+    const [previewedAnnotation, selectedAnnotation, hoveredAnnotation, onHoverAnnotation, onSelectAnnotation] = useHoverPickSelector()
 
     const day = getStartOfDayForTime(data[0].date)
 
@@ -82,7 +80,7 @@ export const Annotator = (props) => {
                     <Chart 
                         data={data} 
                         onEndBrush={onEndBrush}
-                        annotations={(selectedAnnotation != null) && [annotations[selectedAnnotation]]}
+                        annotations={(previewedAnnotation != null) && [ annotations[previewedAnnotation] ]}
                         />
                 </Stack>
             </Flex>
@@ -106,7 +104,10 @@ export const Annotator = (props) => {
                             <TableBody>
                             {
                                 _.sortBy(annotations, ['startTime'])
-                                .map((x, i) => <TableRow bg={i % 2 == 0 ? 'white' : 'gray.50'} className={`${styles.annotation} ${selectedAnnotation === i && styles.active}`}  onClick={() => setSelectedAnnotation(i)}>
+                                .map((x, i) => <TableRow bg={i % 2 == 0 ? 'white' : 'gray.50'} className={`${styles.annotation} ${selectedAnnotation === i && styles.active}`}  
+                                    onClick={() => onSelectAnnotation(i)}
+                                    onMouseEnter={() => onHoverAnnotation(i)}
+                                    onMouseLeave={() => onHoverAnnotation(null)}>
                                     <Annotation {...x} key={i} active={selectedAnnotation === i}/>
                                 </TableRow>) 
                             }
