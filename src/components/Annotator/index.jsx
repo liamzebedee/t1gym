@@ -63,13 +63,22 @@ export const Annotator = (props) => {
         setBrush(null)
     }
 
+    const [selectedAnnotation, setSelectedAnnotation] = useState(null)
+    function onSelectAnnotation(annotationIdx) {
+        setSelectedAnnotation(annotationIdx)
+    }
+
     const day = getStartOfDayForTime(data[0].date)
 
     return <Box p={5}>
         <Flex>
             <Flex align="left">
                 <Stack alignItems='center'>
-                    <Chart data={data} onEndBrush={onEndBrush}/>
+                    <Chart 
+                        data={data} 
+                        onEndBrush={onEndBrush}
+                        annotations={(selectedAnnotation != null) && [annotations[selectedAnnotation]]}
+                        />
                 </Stack>
             </Flex>
 
