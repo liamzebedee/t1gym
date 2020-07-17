@@ -1,0 +1,12 @@
+.annotation {
+    transition: all 125ms ease-in-out;
+}
+
+.annotation:hover {
+    background: #eaeaea;
+    cursor: pointer;
+}
+
+.active {
+    border: 1px solid #555;
+}

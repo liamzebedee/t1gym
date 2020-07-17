@@ -1,4 +1,4 @@
-import { Box, Flex, Stack, Heading, Text } from "@chakra-ui/core";
+import { Box, Flex, Stack, Heading, Text, Tag, TagLabel } from "@chakra-ui/core";
 import { useRef, useState } from 'react';
 import * as _ from 'lodash'
 import { DateTime } from 'luxon'
@@ -6,14 +6,34 @@ import DatabaseService from '../../misc/db_service';
 import { getStartOfDayForTime } from '../../pages/helpers';
 import { AnnotationInputControl } from '../AnnotationInputControl';
 import { Chart } from "../Chart";
+import styles from './styles.module.css'
+import { Table, TableRow, TableCell, TableHead, TableHeader } from "../Table";
 
-
-const Annotation = ({ startTime, endTime, tags }) => {
+const Annotation = ({ startTime, endTime, tags, notes }) => {
     const start = DateTime.fromJSDate(startTime)
-
-    return <Text mt={4}>
-        {start.toFormat('t')} {tags.join(',')}
+    return <><TableCell>
+     <Text>
+        {start.toFormat('t')}
     </Text>
+    </TableCell>
+    <TableCell>
+        {tags.join(', ')}
+        {/* <Stack spacing={1} isInline>
+            {tags.length && tags.map(tag => <Tag
+                size={'sm'}
+                rounded="full"
+                variant="solid"
+            >
+                <TagLabel>{tag}</TagLabel>
+            </Tag>)}
+        </Stack> */}
+    </TableCell>
+    <TableCell>
+        <p style={{ whiteSpace: 'pre-wrap' }}>
+            {notes}
+        </p>
+    </TableCell>
+    </>
 }
 
 export const Annotator = (props) => {
@@ -56,11 +76,26 @@ export const Annotator = (props) => {
             <Flex flexGrow={1} align="right" flexDirection="column" align="top">
                 <Stack spacing={8}>
                     <Box p={5} shadow="sm" borderWidth="1px">
-                        <Heading fontSize="xl">
+                        <Heading fontSize="xl" mb={5}>
                             {day.toFormat('DDD')}
                         </Heading>
                         
-                        { _.sortBy(annotations, ['startTime']).map((x, i) => <Annotation {...x} key={i}/>) }
+                        
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableHeader><strong>{annotations.length} annotations</strong></TableHeader>
+                                    <TableHeader>Tags</TableHeader>
+                                    <TableHeader>Notes</TableHeader>
+                                </TableRow>
+                            </TableHead>
+                        {
+                            _.sortBy(annotations, ['startTime'])
+                            .map((x, i) => <TableRow bg={i % 2 == 0 ? 'white' : 'gray.50'} className={`${styles.annotation} ${selectedAnnotation === i && styles.active}`} onClick={() => setSelectedAnnotation(i)}>
+                                <Annotation {...x} key={i}/>
+                            </TableRow>) 
+                        }
+                        </Table>
                     </Box>
                     
                     <Box p={5} shadow="xs" borderWidth="1px">
