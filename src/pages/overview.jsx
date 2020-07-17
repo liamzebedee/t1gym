@@ -89,113 +89,13 @@ const Dashboard = () => {
     </Box>
 }
 
-const DEFAULT_TAGS = [
-    'Exercise',
-    'Drinking',
-    'Question',
-]
 
-
-
-import { getStartOfDayForTime, usePromiseLoadingState } from './helpers'
-import queryString from 'query-string'
+import { Scenarios } from '../components/Scenarios'
+import { getStartOfDayForTime, usePromiseLoadingState, convertData } from './helpers'
 import { AnnotatorContainer } from '../components/Annotator/Container';
 import { ReportCard } from '../components/ReportCard';
 
-const Scenarios = () => {
-    let db
-    let [annotations, setAnnotations] = useState(null)
-    let [tags, setTags] = useState([])
-    
-    async function getScenarios() {
-        db = await DatabaseService.get()
-        const annotationRecords = await db.annotations
-            .where('tags').anyOf('123')
-            .distinct()
-            .toArray()
-        
-        console.log(annotationRecords)
-        setAnnotations(annotationRecords)
-    }
 
-    async function loadTagCounts(tag) {
-        db = await DatabaseService.get()
-        const count = await db.annotations.where('tags').anyOf(tag).count()
-        return { tag, count }
-    }
-
-    async function loadTags() {
-        setTags(await Promise.all(DEFAULT_TAGS.map(loadTagCounts)))
-    }
-
-    useEffect(() => {
-        getScenarios()
-        loadTags()
-    }, [])
-
-    const [tagFilter, setTagFilter] = useState(null)
-    function selectTag(tag) {
-        setTagFilter(tag)
-        searchScenarios(tag)
-    }
-
-    const [results, setResults] = useState(null)
-    const [loadingSearchResults, setLoadingSearchResults] = useState(null)
-
-    async function searchScenarios(tag) {
-        setLoadingSearchResults(true)
-
-        // Get annotations for tag.
-        db = await DatabaseService.get()
-        const annotations = await db.annotations
-            .where('tags').startsWithAnyOfIgnoreCase(tag)
-            .distinct()
-            .toArray()
-
-        // Get charts for each annotation (from Nightscout).
-        const datums = await Promise.all(annotations.map(async annotation => {
-            const { startTime, endTime } = annotation
-            const params = {
-                startTime: startTime.toString(),
-                endTime: endTime.toString()
-            }
-            const res = await fetch(`/api/charts?${queryString.stringify(params)}`).then(res => res.json())
-            return {
-                annotation,
-                data: res.data
-            }
-        }))
-        
-        setResults(datums)
-        setLoadingSearchResults(false)
-    }
-
-    return <>
-        <Stack spacing={4} isInline>
-            {tags.map(({ tag, count }, i) => {
-                return <Tag key={i} onClick={() => selectTag(tag)} variantColor="gray">
-                    <TagLabel>{tag} ({count})</TagLabel>
-                </Tag>
-            }) }
-        </Stack>
-        
-        { loadingSearchResults && <p><CircularProgress isIndeterminate size="sm" color="green"/> Searching for {tagFilter}...</p> }
-        
-        { loadingSearchResults === false && <>
-            {results.map((result, i) => {
-                const day = getStartOfDayForTime(result.annotation.startTime)
-
-                return <div key={i}>
-                    <strong>{day.toFormat('DDD')}</strong>
-                    <p>
-                        Notes: {result.annotation.notes}
-                    </p>
-                    <Chart data={convertData(result.data)}/>
-                </div>
-            })}
-        </>}
-    </>
-}
 
 export default () => {
     return <ThemeProvider>
