@@ -7,17 +7,22 @@ import { getStartOfDayForTime } from '../../pages/helpers';
 import { AnnotationInputControl } from '../AnnotationInputControl';
 import { Chart } from "../Chart";
 import styles from './styles.module.css'
-import { Table, TableRow, TableCell, TableHead, TableHeader } from "../Table";
+import { Table, TableRow, TableCell, TableHead, TableHeader, TableBody } from "../Table";
 
-const Annotation = ({ startTime, endTime, tags, notes }) => {
+const Annotation = ({ startTime, endTime, tags, notes, active }) => {
     const start = DateTime.fromJSDate(startTime)
-    return <><TableCell>
+    return <>
+    <TableCell>
      <Text>
-        {start.toFormat('t')}
+        { active 
+        ? <b>{ start.toFormat('t') }</b> 
+        : start.toFormat('t') 
+        }
+        
     </Text>
     </TableCell>
     <TableCell>
-        {tags.join(', ')}
+        { tags.join(', ') }
         {/* <Stack spacing={1} isInline>
             {tags.length && tags.map(tag => <Tag
                 size={'sm'}
@@ -98,12 +103,14 @@ export const Annotator = (props) => {
                                     <TableHeader>Notes</TableHeader>
                                 </TableRow>
                             </TableHead>
-                        {
-                            _.sortBy(annotations, ['startTime'])
-                            .map((x, i) => <TableRow bg={i % 2 == 0 ? 'white' : 'gray.50'} className={`${styles.annotation} ${selectedAnnotation === i && styles.active}`} onClick={() => setSelectedAnnotation(i)}>
-                                <Annotation {...x} key={i}/>
-                            </TableRow>) 
-                        }
+                            <TableBody>
+                            {
+                                _.sortBy(annotations, ['startTime'])
+                                .map((x, i) => <TableRow bg={i % 2 == 0 ? 'white' : 'gray.50'} className={`${styles.annotation} ${selectedAnnotation === i && styles.active}`}  onClick={() => setSelectedAnnotation(i)}>
+                                    <Annotation {...x} key={i} active={selectedAnnotation === i}/>
+                                </TableRow>) 
+                            }
+                            </TableBody>
                         </Table>
                     </Box>
                     
