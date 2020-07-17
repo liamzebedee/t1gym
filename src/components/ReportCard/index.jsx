@@ -41,6 +41,18 @@ function dataToDayByDay(longitudalData) {
     return days
 }
 
+// Return the index of the first Monday in `data`.
+// Using this we can slice the data set, showing 
+// a fixed layout of 5 weekdays and a 2 day weekend 
+// (nous sommes en Australie, pas France).
+function firstMonday(data) {
+    for(let i = 0; i < data.length; i++) {
+        const date = DateTime.fromJSDate(new Date(data[i].date))
+        if(date.weekday == 1) return i
+    }
+    return null
+}
+
 export const ReportCard = ({ }) => {
     let [data, setData] = useState(null)
     let [statistics, setStatistics] = useState({
@@ -58,14 +70,15 @@ export const ReportCard = ({ }) => {
         let data = []
         let days = dataToDayByDay(longitudalData)
         setData(
-            days.map(day => {
-                const stats = calcStats(day)
-                return {
-                    data: day,
-                    date: new Date(day[0].date),
-                    stats,
-                }
-            })
+            days
+                .map(day => {
+                    const stats = calcStats(day)
+                    return {
+                        data: day,
+                        date: new Date(day[0].date),
+                        stats,
+                    }
+                })
             // .reverse()
         )
         setStatistics(statistics)
@@ -185,10 +198,12 @@ export const ReportCard = ({ }) => {
                 {data === null && <CircularProgress isIndeterminate size="sm" color="green" />}
                 <svg className={styles.reportCard} width={dimensions.width} height={dimensions.height} viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}>
                     <g transform={`translate(${margin.left}, ${margin.top})`}>
-                        {data && data.map((data, i) => {
-                            const { PGS } = data.stats
+                        {data && data.slice(firstMonday(data)).map((datum, i) => {
+                            const { PGS } = datum.stats
 
-                            const date = DateTime.fromJSDate(data.date)
+                            const date = DateTime.fromJSDate(datum.date)
+                            const weekend = date.weekday > 5
+
                             const beginsNewMonth = date.get('day') === 1 || i === 0
                             let dateStr
                             if (beginsNewMonth) {
@@ -197,7 +212,6 @@ export const ReportCard = ({ }) => {
                                 dateStr = date.toFormat(`d`)
                             }
 
-                            const weekend = date.weekday > 5
                             return <g key={i}
                                 transform={`translate(${ROW_WIDTH * (i % 7)}, ${ROW_HEIGHT * Math.floor(i / 7)} )`}
                                 onMouseEnter={() => onHoverDay(i)}
