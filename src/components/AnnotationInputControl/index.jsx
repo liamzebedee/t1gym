@@ -66,13 +66,17 @@ export const AnnotationInputControl = ({ startTime, endTime, onSave, onDiscard }
             <Stack isInline>
                 <FormControl>
                     <FormLabel htmlFor="start-time">Start time</FormLabel>
-                    <DateTime name="start-time"
+                    <DateTime 
+                        dateFormat={false}
+                        name="start-time"
                         value={startTime} />
                 </FormControl>
 
                 <FormControl>
                     <FormLabel htmlFor="end-time">End time</FormLabel>
-                    <DateTime name="end-time"
+                    <DateTime 
+                        dateFormat={false}
+                        name="end-time"
                         value={endTime} />
                 </FormControl>
             </Stack>
