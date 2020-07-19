@@ -53,6 +53,36 @@ function firstMonday(data) {
     return null
 }
 
+// Rescale the PGS value into
+// something which suits a linear colour scale.
+function rescalePgs(pgs) {
+    /**
+     * PGS <35 excellent glycemic status (non-diabetic)
+     * PGS 35-100 good glycemic status (diabetic)
+     * PGS 100-150 poor glycemic status (diabetic)
+     * PGS >150 very poor glycemic status (diabetic)
+     */
+    if (pgs <= 35) {
+        return (pgs / 35) * (1 / 3)
+    }
+    if (pgs <= 100) {
+        return (pgs / 100) * (2 / 3)
+    }
+    if (pgs <= 150) {
+        return (pgs / 150) * (3 / 3)
+    }
+    return 1
+}
+
+const color = x => d3.interpolateRdYlGn(1 - rescalePgs(x))
+
+const Blip = ({ pgs }) => {
+    const r = 25/2
+    return <svg style={{ display: 'inline' }} width={r*2} height={r*2}> 
+        <circle r={r} cx={r} cy={r} fill={color(pgs)}></circle>
+    </svg>
+}
+
 export const ReportCard = ({ }) => {
     let [data, setData] = useState(null)
     let [statistics, setStatistics] = useState({
@@ -88,34 +118,7 @@ export const ReportCard = ({ }) => {
         load()
     }, [])
 
-    // Rescale the PGS value into
-    // something which suits a linear colour scale.
-    function rescalePgs(pgs) {
-        if (pgs <= 35) {
-            return (pgs / 35) * (1 / 3)
-        }
-        if (pgs <= 100) {
-            return (pgs / 100) * (2 / 3)
-        }
-        if (pgs <= 150) {
-            return (pgs / 150) * (3 / 3)
-        }
-        return 1
-    }
 
-    /**
-     * PGS <35 excellent glycemic status (non-diabetic)
-     * PGS 35-100 good glycemic status (diabetic)
-     * PGS 100-150 poor glycemic status (diabetic)
-     * PGS >150 very poor glycemic status (diabetic)
-     */
-    // const color = x => d3.interpolateRdYlGn(1 - colorScale(x))
-    const color = x => d3.interpolateRdYlGn(1 - rescalePgs(x))
-
-
-    // simple grid
-    // 7 days in a row
-    // followed by newline
 
     const margin = {
         // top: 40 + 30,
@@ -140,9 +143,11 @@ export const ReportCard = ({ }) => {
             <StatGroup>
                 <Stat>
                     <StatLabel>PGS</StatLabel>
-                    <StatNumber>{statistics.PGS}</StatNumber>
+                    <StatNumber>
+                        <Blip pgs={statistics.PGS}/> {statistics.PGS}
+                    </StatNumber>
                     <StatHelpText>
-                        {/* <StatArrow type="increase" /> */}
+                        <StatArrow type="increase" /> 
                     </StatHelpText>
                 </Stat>
 
