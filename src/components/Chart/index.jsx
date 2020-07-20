@@ -66,7 +66,9 @@ export const Chart = (props) => {
                 .tickFormat(x => {
                     flip = !flip
                     if (flip) return ''
-                    return d3.timeFormat("%I %p")(x)
+                    const timeStr = d3.timeFormat("%I %p")(x)
+                    if(timeStr[0] === '0') return timeStr.slice(1)
+                    return timeStr
                 })
         }
         d3.select(el).call(yAxis)
