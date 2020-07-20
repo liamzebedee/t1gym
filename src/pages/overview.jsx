@@ -16,6 +16,7 @@ import { Duration, DateTime } from 'luxon'
 
 
 import DatabaseService from '../misc/db_service'
+import { Analyse } from '../components/Analyse';
 
 const Dashboard = () => {
     const [bgs, setBgs] = useState(null)
@@ -63,20 +64,7 @@ const Dashboard = () => {
                 </TabPanel>
 
                 <TabPanel>
-                    <Box p={5} boxShadow="lg">
-                        <Heading size="lg">Past 2 weeks.</Heading>
-                        
-                        {loadingBGData && <>
-                            <CircularProgress isIndeterminate size="sm" color="green"/>
-                            <span>Loading BG's...</span>
-                        </>}
-                        
-                        {bgs && bgs.map((bgset, i) => {
-                            return <div key={i}>
-                                <AnnotatorContainer data={convertData(bgset.data)}/>
-                            </div>
-                        })}
-                    </Box>
+                    <Analyse {...{loadingBGData, bgs}}/>
                 </TabPanel>
 
                 <TabPanel>
