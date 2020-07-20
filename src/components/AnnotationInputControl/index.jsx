@@ -1,12 +1,12 @@
 import { useState } from "react"
-import { Stack, FormControl, FormLabel, Textarea, Button, Heading } from "@chakra-ui/core"
+import { Stack, FormControl, FormLabel, Textarea, Button, Heading, Flex, Box } from "@chakra-ui/core"
 import DateTime from 'react-datetime'
 import { TagsEditor } from '../TagsEditor'
 import { useEffect } from "react"
 
 function useEditKey() {
     const [editKey, setEditKey] = useState(0)
-    const resetEditKey = () => setEditKey(editKey+1)
+    const resetEditKey = () => setEditKey(editKey + 1)
     return [
         editKey,
         resetEditKey
@@ -79,9 +79,10 @@ export const AnnotationInputControl = ({ startTime, endTime, onSave, onDiscard, 
                         name="end-time"
                         value={endTime} />
                 </FormControl>
-                <span><b>BGL</b>: {(stats.endBG || 0).toFixed(1)}mmol</span>
+
+                <span style={{ width: 150 }}><b>BGL</b>: {(stats.endBG || 0).toFixed(1)}mmol</span>
                 <Box paddingRight="5"></Box>
-                <span><b>Δ BGL</b>: {(stats.deltaBG || 0) > 1 ? '+' : ''}{(stats.deltaBG || 0).toFixed(1)}mmol</span>
+                <span  style={{ width: 150 }}><b>Δ BGL</b>: {(stats.deltaBG || 0) > 1 ? '+' : ''}{(stats.deltaBG || 0).toFixed(1)}mmol</span>
             </Flex>
 
             <FormControl>

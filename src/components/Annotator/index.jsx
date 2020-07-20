@@ -104,30 +104,19 @@ export const Annotator = (props) => {
 
     const day = getStartOfDayForTime(data[0].date)
 
-    return <Box p={5}>
-        <Flex>
-            <Flex align="left">
-                <Stack alignItems='center'>
-                    <Chart 
-                        data={data} 
-                        onEndBrush={onEndBrush}
-                        annotations={(previewedAnnotation != null) && [ annotations[previewedAnnotation] ]}
-                        />
-                </Stack>
-            </Flex>
-
-            <Flex flexGrow={1} align="right" flexDirection="column" align="top">
-                <Stack spacing={8}>
-                    <Box p={5} shadow="sm" borderWidth="1px">
+    return <Box pb={10} pt={10} borderWidth="1px" shadow="xs">
+        <Flex flexDirection="row">
+            <Flex flex="4" align="top" justify="center" justifyItems="center" pl={10} pr={10}>
+                <Stack flexGrow={1} spacing={8}>
+                    <Box>
                         <Heading fontSize="xl" mb={5}>
                             {day.toFormat('DDD')}
                         </Heading>
                         
-                        
                         <Table>
                             <TableHead>
                                 <TableRow>
-                                    <TableHeader><strong>{annotations.length} annotations</strong></TableHeader>
+                                    <TableHeader>Time</TableHeader>
                                     <TableHeader>Tags</TableHeader>
                                     <TableHeader>Notes</TableHeader>
                                 </TableRow>
@@ -146,7 +135,7 @@ export const Annotator = (props) => {
                         </Table>
                     </Box>
                     
-                    <Box p={5} shadow="xs" borderWidth="1px">
+                    <Box p={2} shadow="xs" borderWidth="1px">
                         {function(){
                             if(brush == null) return <b>Drag to annotate</b>
                             else {
@@ -168,6 +157,14 @@ export const Annotator = (props) => {
                         }()}
                     </Box>
                 </Stack>
+            </Flex>
+
+            <Flex flex="6" align="start" justify="start" mr={5}>
+                <Chart 
+                    data={data} 
+                    onEndBrush={onEndBrush}
+                    annotations={(previewedAnnotation != null) && [ annotations[previewedAnnotation] ]}
+                    />
             </Flex>
         </Flex>
     </Box>

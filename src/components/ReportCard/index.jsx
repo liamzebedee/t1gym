@@ -11,6 +11,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Chart } from '../Chart';
 import styles from './styles.module.css'
 import { convertData } from '../../pages/helpers';
+import { useHoverPickSelector } from '../../misc/hooks';
 
 function dataToDayByDay(longitudalData) {
     let data = _.sortBy(longitudalData, ['date'])
@@ -174,15 +175,18 @@ export const ReportCard = ({ }) => {
         <StatGroup>
             <Stat>
                 <StatLabel>
-                    <Heading size="lg" pb={5} pt={5}>30 Day Summary</Heading>
+                    <Heading size="lg" pb={5} pt={5}>30 Day Report Card</Heading>
                 </StatLabel>
             </Stat>
         </StatGroup>
 
-        <Flex direction="row" >
-            <Flex direction="column">
+        <Flex direction="row">
+            <Flex direction="column" flex="1">
                 {data === null && <CircularProgress isIndeterminate size="sm" color="green" />}
-                <svg className={styles.reportCard} width={dimensions.width} height={dimensions.height} viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}>
+                <svg 
+                className={styles.reportCard} 
+                viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
+                >
                     <g transform={`translate(${margin.left}, ${margin.top})`}>
                         {data && data.map((datum, i) => {
                             const { PGS } = datum.stats
@@ -224,9 +228,10 @@ export const ReportCard = ({ }) => {
                         })}
                     </g>
                 </svg>
+                
             </Flex>
 
-            <Flex direction="column">
+            <Flex direction="column" flex="1">
                 {(previewedDay !== null) && <Chart data={convertData(data[previewedDay].data)} />}
             </Flex>
         </Flex>

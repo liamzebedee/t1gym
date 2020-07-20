@@ -9,6 +9,9 @@ import { convertData } from "../../pages/helpers"
 const DEFAULT_TAGS = [
     'Exercise',
     'Drinking',
+    'Missed bolus',
+    'Lows',
+    'Breakfast',
     'Question',
 ]
 
@@ -35,6 +38,7 @@ export const Scenarios = () => {
     }
 
     async function loadTags() {
+        db = await DatabaseService.get()
         setTags(await Promise.all(DEFAULT_TAGS.map(loadTagCounts)))
     }
 

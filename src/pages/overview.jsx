@@ -44,22 +44,14 @@ const Dashboard = () => {
             <TabPanels>
 
                 <TabPanel>
-                    <Box p={5} boxShadow="sm">
-                    <Heading size="lg">
-                        How am I tracking?
-                    </Heading>
+                    <Box p={5} boxShadow="lg">
+                        <Heading size="xl">
+                            How am I tracking?
+                        </Heading>
 
-                    <Box p={5}>
-                        <ReportCard/>
-                    </Box>
-
-                    {/* Breakfast
-
-                    Lunch
-
-                    Dinner
-
-                    Overnight */}
+                        <Box pt={5}>
+                            <ReportCard/>
+                        </Box>
                     </Box>
                 </TabPanel>
 

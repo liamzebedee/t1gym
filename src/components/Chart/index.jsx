@@ -33,7 +33,6 @@ export const Chart = (props) => {
             minute: 0
         })
         let end = start.plus({ days: 1 })
-        console.log([start, end].map(x => x.toString()), new Date(start.toMillis()))
         return [
             start.toMillis(),
             end.toMillis()
@@ -108,9 +107,9 @@ export const Chart = (props) => {
     }
 
     return <svg
-        width={width + margin.left + margin.right}
-        height={height + margin.top + margin.bottom}
-        viewBox={`0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`}>
+        // width={'100%'} height={'100%'}
+        viewBox={`0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`}
+        className={styles.chart}>
         <g transform={`translate(${margin.left}, ${margin.top})`}>
 
             {/* Axes. */}
