@@ -141,25 +141,21 @@ export const ReportCard = ({ }) => {
 
     return <>
         <Flex direction="row">
-            <StatGroup>
-                <Stat>
-                    <StatLabel>PGS</StatLabel>
-                    <StatNumber>
-                        <Blip pgs={statistics.PGS}/> {statistics.PGS}
-                    </StatNumber>
-                    <StatHelpText>
-                        <StatArrow type="increase" /> 
-                    </StatHelpText>
-                </Stat>
+            <Stack isInline={true} spacing={30}>
+                {/* Stats. */}
+                <Box>
+                    <Heading size="sm">Personal Glycemic State</Heading>
+                    <div>
+                        <Text fontSize="2xl"><Blip pgs={statistics.PGS}/> {statistics.PGS}</Text>
+                    </div>
+                </Box>
 
-                <Stat>
-                    <StatLabel>HBa1c</StatLabel>
-                    <StatNumber>{statistics.hba1c}%</StatNumber>
-                    <StatHelpText>
-                        {/* <StatArrow type="increase" /> */}
-                        {/* 23.36% */}
-                    </StatHelpText>
-                </Stat>
+                <Box>
+                    <Heading size="sm">HBa1c</Heading>
+                    <div>
+                        <Text fontSize="2xl">{statistics.hba1c}%</Text>
+                    </div>
+                </Box>
 
                 {/* <Stat>
                     <StatLabel>Progress since last month</StatLabel>
@@ -169,7 +165,7 @@ export const ReportCard = ({ }) => {
                     9.05%
                     </StatHelpText>
                 </Stat> */}
-            </StatGroup>
+            </Stack>
         </Flex>
 
         <StatGroup>
