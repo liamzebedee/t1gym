@@ -194,6 +194,8 @@ export const ReportCard = ({ }) => {
                             let dateStr
                             if (beginsNewMonth) {
                                 dateStr = <tspan font-weight="bold">{date.toFormat(`MMM d`)}</tspan>
+                            } else if (i === data.length - 1) {
+                                dateStr = 'Today'
                             } else {
                                 dateStr = date.toFormat(`d`)
                             }
@@ -209,13 +211,13 @@ export const ReportCard = ({ }) => {
 
                                 <rect width={ROW_WIDTH} height={ROW_HEIGHT} className={weekend && styles.weekend}>
                                 </rect>
-
-                                <text textAnchor="start" class={styles.dateLabel} x={10} y={20}>
+                                
+                                <text textAnchor="start" class={styles.dateLabel} x={15} y={25}>
                                     {dateStr}
                                 </text>
 
-                                <g transform={`translate(65,75)`}>
-                                    <circle r={45} cx={0} cy={0} fill={color(PGS)} />
+                                <g transform={`translate(65,80)`}>
+                                    <circle r={40} cx={0} cy={0} fill={color(PGS)} />
                                     <text textAnchor="middle" class={styles.pgsLabel} dy=".3em">{PGS.toFixed(0)}</text>
                                 </g>
                             </g>
