@@ -58,12 +58,13 @@ export const Annotator = (props) => {
     //     let extent = d3.event.selection
     }
     function onEndBrush(coords) {
+        onSelectAnnotation(null)
         if(!coords) {
             setBrush(null)
             return
         }
+        
         const [startTime, endTime] = coords
-
 
         // Get glucose range and calculate stats.
         const annotationData = data.filter(d => {
