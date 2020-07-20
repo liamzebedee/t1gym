@@ -44,8 +44,8 @@ export function TableHeader(props) {
   return (
     <Box
       as="th"
-      px="6"
-      py="3"
+      px="3"
+      py="2"
       borderBottomWidth="1px"
       backgroundColor="gray.50"
       textAlign="left"
@@ -76,8 +76,8 @@ export function TableCell(props) {
   return (
     <Box
       as="td"
-      px="6"
-      py="4"
+      px="3"
+      py="2"
       lineHeight="1.25rem"
       whiteSpace="nowrap"
       {...props}
