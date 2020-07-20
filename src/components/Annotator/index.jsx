@@ -47,12 +47,42 @@ export const Annotator = (props) => {
 
     const d3Container = useRef(null);
 
-    let [brush, setBrush] = useState(null)
+    const [brush, setBrush] = useState(null)
+    const [stats, setStats] = useState({
+        startBG: null,
+        endBG: null,
+        deltaBG: null
+    })
 
     function onStartBrush() {
     //     let extent = d3.event.selection
     }
     function onEndBrush(coords) {
+        if(!coords) {
+            setBrush(null)
+            return
+        }
+        const [startTime, endTime] = coords
+
+
+        // Get glucose range and calculate stats.
+        const annotationData = data.filter(d => {
+            return (d.date >= startTime) && (d.date <= endTime)
+        })
+
+        if(annotationData.length) {
+            // TODO(liamz): I don't exactly know what's going on here.
+            const startBG = annotationData[0].sgv
+            const endBG = _.last(annotationData).sgv
+            const deltaBG = endBG - startBG
+            setStats({
+                startBG,
+                endBG,
+                deltaBG
+            })
+        }
+
+
         setBrush(coords)
     }
 
@@ -120,8 +150,13 @@ export const Annotator = (props) => {
                             if(brush == null) return <b>Drag to annotate</b>
                             else {
                                 return <>
+                                    <Heading as="h3" size="md">
+                                        New annotation
+                                    </Heading>
+
                                     {/* {formatPlotlyDate(brush[0])} to {formatPlotlyDate(brush[1])} */}
                                     <AnnotationInputControl 
+                                        stats={stats}
                                         startTime={brush[0]} 
                                         endTime={brush[1]}
                                         onSave={onSaveAnnotation}

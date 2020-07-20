@@ -21,8 +21,8 @@ function useEditKey() {
  * @property {string} notes
  */
 
-export const AnnotationInputControl = ({ startTime, endTime, onSave, onDiscard }) => {
-    let [ editKey, resetEditKey ] = useEditKey()
+export const AnnotationInputControl = ({ startTime, endTime, onSave, onDiscard, stats }) => {
+    let [editKey, resetEditKey] = useEditKey()
 
     useEffect(() => {
         resetEditKey()
@@ -59,27 +59,30 @@ export const AnnotationInputControl = ({ startTime, endTime, onSave, onDiscard }
 
     return <div>
         <Stack shouldWrapChildren>
-            
-            <Heading as="h3" size="md">
-            New annotation
-            </Heading>
-            <Stack isInline>
+
+            <Flex flexDirection="row">
                 <FormControl>
                     <FormLabel htmlFor="start-time">Start time</FormLabel>
-                    <DateTime 
+                    <DateTime
                         dateFormat={false}
                         name="start-time"
                         value={startTime} />
                 </FormControl>
+                <span><b>BGL</b>: {(stats.startBG || 0).toFixed(1)}mmol</span>
+            </Flex>
 
+            <Flex flexDirection="row">
                 <FormControl>
                     <FormLabel htmlFor="end-time">End time</FormLabel>
-                    <DateTime 
+                    <DateTime
                         dateFormat={false}
                         name="end-time"
                         value={endTime} />
                 </FormControl>
-            </Stack>
+                <span><b>BGL</b>: {(stats.endBG || 0).toFixed(1)}mmol</span>
+                <Box paddingRight="5"></Box>
+                <span><b>Δ BGL</b>: {(stats.deltaBG || 0) > 1 ? '+' : ''}{(stats.deltaBG || 0).toFixed(1)}mmol</span>
+            </Flex>
 
             <FormControl>
                 <FormLabel htmlFor="end-time">Event tags</FormLabel>
