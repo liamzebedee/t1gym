@@ -64,6 +64,7 @@ export const AnnotationInputControl = ({ startTime, endTime, onSave, onDiscard, 
                 <FormControl>
                     <FormLabel htmlFor="start-time">Start time</FormLabel>
                     <DateTime
+                        inputProps={{ disabled: true }}
                         dateFormat={false}
                         name="start-time"
                         value={startTime} />
@@ -75,6 +76,7 @@ export const AnnotationInputControl = ({ startTime, endTime, onSave, onDiscard, 
                 <FormControl>
                     <FormLabel htmlFor="end-time">End time</FormLabel>
                     <DateTime
+                        inputProps={{ disabled: true }}
                         dateFormat={false}
                         name="end-time"
                         value={endTime} />
