@@ -1,0 +1,14 @@
+.scenarioTag {
+    transition: all 150ms ease-in-out;
+}
+
+.scenarioTag:hover {
+    cursor: pointer;
+    transform: translate(0, -2px);
+    background: #dfe3e6;
+}
+
+.scenarioTag.active {
+    background: #2D3748;
+    color: white;
+}

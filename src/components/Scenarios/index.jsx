@@ -5,6 +5,7 @@ import { CircularProgress, TagLabel, Tag, Stack, Flex, Box, Heading } from "@cha
 import queryString from 'query-string'
 import { getStartOfDayForTime } from "../../pages/helpers"
 import { convertData } from "../../pages/helpers"
+import styles from './styles.module.css'
 
 const DEFAULT_TAGS = [
     'Exercise',
@@ -17,19 +18,7 @@ const DEFAULT_TAGS = [
 
 export const Scenarios = () => {
     let db
-    let [annotations, setAnnotations] = useState(null)
     let [tags, setTags] = useState([])
-    
-    async function getScenarios() {
-        db = await DatabaseService.get()
-        const annotationRecords = await db.annotations
-            .where('tags').anyOf('123')
-            .distinct()
-            .toArray()
-        
-        console.log(annotationRecords)
-        setAnnotations(annotationRecords)
-    }
 
     async function loadTagCounts(tag) {
         db = await DatabaseService.get()
@@ -39,11 +28,22 @@ export const Scenarios = () => {
 
     async function loadTags() {
         db = await DatabaseService.get()
-        setTags(await Promise.all(DEFAULT_TAGS.map(loadTagCounts)))
+
+        // TODO: we can't search all available tags.
+        // TODO: so I have to create a set manually.
+        const uniqueTags = new Set()
+        const annotationRecords = await db.annotations.toArray()
+        annotationRecords.map(annotation => {
+            annotation.tags.map(tag => uniqueTags.add(tag))
+        })
+        
+        // setTags(await Promise.all(DEFAULT_TAGS.map(loadTagCounts)))
+        setTags(
+            await Promise.all(Array.from(uniqueTags).map(loadTagCounts))
+        )
     }
 
     useEffect(() => {
-        getScenarios()
         loadTags()
     }, [])
 
@@ -79,46 +79,48 @@ export const Scenarios = () => {
                 data: res.data
             }
         }))
-        
+
         setResults(datums)
         setLoadingSearchResults(false)
     }
 
     return <Box p={5} boxShadow="lg">
-        <Stack spacing={4} isInline>
+        <Flex>
+        <Stack shouldWrapChildren={true} spacing={4} isInline mb={5}>
             {tags.map(({ tag, count }, i) => {
-                return <Tag key={i} onClick={() => selectTag(tag)} variantColor="gray">
+                const active = tagFilter === tag
+                return <Tag className={`${styles.scenarioTag} ${active ? styles.active : ''}`} key={i} onClick={() => selectTag(tag)} variantColor="gray">
                     <TagLabel>{tag} ({count})</TagLabel>
                 </Tag>
-            }) }
+            })}
         </Stack>
-        
-        { loadingSearchResults && <p><CircularProgress isIndeterminate size="sm" color="green"/> Searching for {tagFilter}...</p> }
-        
-        { loadingSearchResults === false && <>
+        </Flex>
+
+        {loadingSearchResults && <p><CircularProgress isIndeterminate size="sm" color="green" /> Searching for {tagFilter}...</p>}
+
+        {loadingSearchResults === false && <>
             {_.sortBy(results, ['annotation.startTime']).reverse().map((result, i) => {
                 const day = getStartOfDayForTime(result.annotation.startTime)
 
                 return <Box key={i} p={5}>
                     <Flex>
-                        <Flex align="left">
-                            <Stack alignItems='center'>
-                                <Chart data={convertData(result.data)} 
-                                    dynamicExtent={true}/>
-                            </Stack>
+                        <Flex align="left" flex="1">
+                            <Chart
+                                data={convertData(result.data)}
+                                dynamicExtent={true} />
                         </Flex>
 
-                    <Flex flexGrow={1} align="right" flexDirection="column" align="top">
-                        <Stack spacing={8}>
-                            <Box p={5} shadow="sm" borderWidth="1px">
-                                <Heading fontSize="xl">
-                                    {day.toFormat('DDD')}
-                                </Heading>
-                                
-                                Notes: <p style={{ whiteSpace: 'pre-wrap' }}>{result.annotation.notes}</p>
-                            </Box>
-                        </Stack>
-                    </Flex>
+                        <Flex flex="1">
+                            <Stack spacing={8}>
+                                <Box p={5} shadow="sm" borderWidth="1px">
+                                    <Heading fontSize="xl">
+                                        {day.toFormat('DDD')}
+                                    </Heading>
+
+                                    Notes: <p style={{ whiteSpace: 'pre-wrap' }}>{result.annotation.notes}</p>
+                                </Box>
+                            </Stack>
+                        </Flex>
                     </Flex>
                 </Box>
             })}
