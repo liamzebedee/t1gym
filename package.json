@@ -5,8 +5,9 @@
   "license": "MIT",
   "scripts": {
     "dev": "next",
+    "start": "next",
     "build": "next build",
-    "start": "next start",
+    "DEPRECATED:start": "next start",
     "ts:watch": "tsc -W",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook"
