@@ -37,7 +37,7 @@ const Dashboard = () => {
         <Tabs variant="soft-rounded" variantColor="green">
             <TabList>
                 <Tab>Overview</Tab>
-                <Tab>Analyse</Tab>
+                <Tab>Logbook</Tab>
                 <Tab>Patterns</Tab>
             </TabList>
 
