@@ -10,4 +10,4 @@ RUN npm install
 
 ADD . /app
 
-RUN npm run start
+CMD npm run start -p $PORT
