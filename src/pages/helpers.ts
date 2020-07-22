@@ -253,3 +253,5 @@ export function convertData(d) {
         })
         .reverse()
 }
+
+export default () => null
