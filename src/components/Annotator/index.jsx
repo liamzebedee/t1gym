@@ -128,7 +128,7 @@ export const Annotator = (props) => {
                                     onClick={() => onSelectAnnotation(i)}
                                     onMouseEnter={() => onHoverAnnotation(i)}
                                     onMouseLeave={() => onHoverAnnotation(null)}>
-                                    <Annotation {...x} key={i} active={selectedAnnotation === i}/>
+                                    <Annotation {...x} key={`${x.startTime} ${x.endTime} ${i}`} active={selectedAnnotation === i}/>
                                 </TableRow>) 
                             }
                             </TableBody>
