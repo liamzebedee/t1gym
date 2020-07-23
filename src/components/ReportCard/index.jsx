@@ -183,8 +183,6 @@ export const ReportCard = ({ }) => {
                 >
                     <g transform={`translate(${margin.left}, ${margin.top})`}>
                         {data && data.map((datum, i) => {
-                            const { PGS } = datum.stats
-
                             const date = DateTime.fromJSDate(datum.date)
                             const weekend = date.weekday > 5
 
@@ -196,6 +194,16 @@ export const ReportCard = ({ }) => {
                                 dateStr = 'Today'
                             } else {
                                 dateStr = date.toFormat(`d`)
+                            }
+
+                            // Show PGS only if the day contained data.
+                            let pgs
+                            if(datum.stats) {
+                                const { PGS } = datum.stats
+                                pgs = <g transform={`translate(65,80)`}>
+                                    <circle r={40} cx={0} cy={0} fill={color(PGS)} />
+                                    <text textAnchor="middle" class={styles.pgsLabel} dy=".3em">{PGS.toFixed(0)}</text>
+                                </g>
                             }
 
                             return <g key={i}
@@ -214,10 +222,7 @@ export const ReportCard = ({ }) => {
                                     {dateStr}
                                 </text>
 
-                                <g transform={`translate(65,80)`}>
-                                    <circle r={40} cx={0} cy={0} fill={color(PGS)} />
-                                    <text textAnchor="middle" class={styles.pgsLabel} dy=".3em">{PGS.toFixed(0)}</text>
-                                </g>
+                                {pgs}
                             </g>
                         })}
                     </g>
