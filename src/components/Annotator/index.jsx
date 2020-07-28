@@ -43,7 +43,7 @@ const Annotation = ({ startTime, endTime, tags, notes, active }) => {
 }
 
 export const Annotator = (props) => {
-    const { data, onAnnotation } = props
+    const { data, treatments, onAnnotation } = props
 
     const d3Container = useRef(null);
 
@@ -164,6 +164,7 @@ export const Annotator = (props) => {
                     data={data} 
                     onEndBrush={onEndBrush}
                     annotations={(previewedAnnotation != null) && [ annotations[previewedAnnotation] ]}
+                    events={treatments}
                     />
             </Flex>
         </Flex>

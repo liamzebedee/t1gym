@@ -4,7 +4,7 @@ import { Annotator } from "."
 import DatabaseService from "../../misc/db_service"
 import { usePromiseLoadingState } from '../../pages/helpers'
 
-export const AnnotatorContainer = ({ data = [] }) => {
+export const AnnotatorContainer = ({ treatments, data = [] }) => {
     const [annotations, setAnnotations] = useState(null)
 
     async function _loadAnnotations() {
@@ -36,6 +36,7 @@ export const AnnotatorContainer = ({ data = [] }) => {
         { loading && '' }
         { loading == false && <Annotator
             data={data}
+            treatments={treatments}
             annotations={annotations}
             onSaveAnnotation={onSaveAnnotation}/>}
     </>

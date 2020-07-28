@@ -12,7 +12,9 @@ export const Analyse = ({ loadingBGData, bgs }) => {
         
         {bgs && bgs.map((bgset, i) => {
             return <div key={i}>
-                <AnnotatorContainer data={convertData(bgset.data)}/>
+                <AnnotatorContainer 
+                    data={convertData(bgset.data)}
+                    treatments={bgset.treatments}/>
             </div>
         })}
     </Box>
