@@ -10,61 +10,6 @@ import styles from './styles.module.css'
 import { functions, MINUTE, compose, SECOND } from "../../model";
 
 
-function calcStats(treatments, extent) {
-    let fns = []
-    
-    const insulinOnBoard = (amount, startTime) => {
-        const insulinActive = functions.fiaspInsulinActive(amount)
-        return u => {
-            const tickerFn = functions.beginsAfter({ start: startTime })
-            const ticker = tickerFn(u)
-            if(ticker === 0) return 0
-            return amount - insulinActive(ticker)
-        }
-    }
-
-    const treatmentsSortedByDate = _.sortBy(
-        treatments.map(treatment => {
-            return {
-                ...treatment,
-                startTime: +new Date(treatment.timestamp)
-            }
-        }), 
-        'startTime'
-    )
-    
-    const insulinTreatments = treatmentsSortedByDate
-        .filter(event => {
-            switch(event.eventType) {
-                case 'Meal Bolus':
-                    // Some Meal Boluses don't have insulin.
-                    if(!event.insulin) return false
-                case 'Correction Bolus':
-                    return true
-                default:
-                    return false
-            }
-        })
-
-    const insulinFns = insulinTreatments
-        .map(treatment => {
-            const amount = treatment.insulin
-            return insulinOnBoard(amount, treatment.startTime)
-        })
-    
-    let iobs = []
-
-    for(let date = extent[0]; date <= extent[1]; date += 60*5*SECOND) {
-        const iob = insulinFns.map(f => f(date)).reduce((prev, curr) => prev + curr, 0)
-        iobs.push({
-            iob,
-            date
-        })
-    }
-
-    return iobs
-}
-
 export const Chart = (props) => {
     let onEndBrush = props.onEndBrush || function () { }
     const data = _.sortBy(props.data, 'date')
@@ -166,51 +111,22 @@ export const Chart = (props) => {
 
     const yIdx = d3.bisector(d => d.date).right
 
-    let transformedEvents = events
-    .filter(event => {
-        switch(event.eventType) {
-            case 'Meal Bolus':
-            case 'Correction Bolus':
-                return true
-            default:
-                return false
-        }
-    })
-
-    const iobData = calcStats(events, extent)
+    const transformedEvents = events
+        .filter(event => {
+            switch(event.eventType) {
+                case 'Meal Bolus':
+                case 'Correction Bolus':
+                    return true
+                default:
+                    return false
+            }
+        })
 
     function bgY(date) {
         const yi = yIdx(data, date)
         if(yi === 0) return data[yi]
         else return data[yi - 1]
     }
-    
-    // Show insulin 
-    // const IOB_Y_SCALE_FACTOR = 2.0
-
-    // const iobLine = d3.line()
-    //     .x(function (d) { return x(d.date) })
-    //     .y(function (d) { 
-    //         const y1 = bgY(d.date).sgv
-    //         const yIOB = d.iob
-    //         return y(y1 + yIOB)
-    //     })
-
-    var iobAreaLine = d3.area()
-        .curve(d3.curveBasis)
-        .x(function(d) { return x(d.date) })
-        .y1(function (d) { 
-            const y1 = bgY(d.date).sgv
-            const yIOB = d.iob
-            return y(y1 + yIOB)
-        })
-        .y0(function (d) { 
-            const y1 = bgY(d.date).sgv
-            return y(y1)
-        })
-        .defined(d => d.iob > 0.1)
-    
-
         
     return <svg
         // width={'100%'} height={'100%'}
@@ -225,13 +141,6 @@ export const Chart = (props) => {
             </g>
 
             <g ref={svgRef}>
-                {/* IOB */}
-                <path
-                    d={iobAreaLine(iobData)}
-                    fill="rgba(0,128,255,0.2)"
-                    stroke={`rgba(0,128,255,0.5)`}
-                    strokeWidth={2} />
-                
                 {/* Line */}
                 <linearGradient
                     id={bglColorId}
@@ -286,7 +195,7 @@ export const Chart = (props) => {
                 })}
 
                 {/* Events. */}
-                {transformedEvents.map((event, i) => {
+                {/* {transformedEvents.map((event, i) => {
                     let fill
                     let text
                     let scaleFactor = 1
@@ -295,7 +204,7 @@ export const Chart = (props) => {
                         case 'Meal Bolus':
                             fill = 'red'
                             let parts = []
-                            if(event.insulin) parts.push(`${event.insulin}U`)
+                            // if(event.insulin) parts.push(`${event.insulin}U`)
                             if(event.carbs) parts.push(`${event.carbs}g`)
                             text = parts.join(' ')
                             scaleFactor = event.carbs / 15
@@ -304,6 +213,7 @@ export const Chart = (props) => {
                             fill = 'blue'
                             text = event.insulin
                             scaleFactor = event.insulin / 1
+                            return
                             break
                         default:
                             return null
@@ -312,7 +222,6 @@ export const Chart = (props) => {
                     const date = new Date(event.timestamp)
                     const u = yIdx(data, date)
                     const u2 = data[u-1]
-                    if(!u2) debugger
                     
                     const el = <g
                         transform={`translate(${x(date)}, ${y(u2.sgv)})`}
@@ -335,9 +244,68 @@ export const Chart = (props) => {
                     </g>
                     
                     return el
+                })} */}
+
+
+                {/* 
+                    Treatments. 
+                */}
+                
+                {/* Carbohydrates. */}
+                {transformedEvents.map((event, i) => {
+                    let carbs
+                    switch(event.eventType) {
+                        case 'Meal Bolus':
+                            carbs = event.carbs
+                            break
+                        default:
+                            return null
+                    }
+
+                    if(!carbs) return
+
+                    const date = new Date(event.timestamp)
+                    const CARB_SCALE_FACTOR = 3
+                    const height = carbs * CARB_SCALE_FACTOR
+
+                    return <g className={styles.carbsBar} transform={`translate(${x(date)}, ${y(0)})`}>
+                        <rect y={-height} height={height} width="5"></rect>
+
+                        <text y={-height - 20}>
+                            {`${carbs}g`}
+                        </text>
+                    </g>
                 })}
 
-                {/* Box */}
+                {/* Insulin dosages. */}
+                {transformedEvents.map((event, i) => {
+                    let insulin
+                    switch(event.eventType) {
+                        case 'Meal Bolus':
+                        case 'Correction Bolus':
+                            insulin = event.insulin
+                            break
+                        default:
+                            return null
+                    }
+
+                    if(!insulin) return
+
+                    const date = new Date(event.timestamp)
+                    const INSULIN_SCALE_FACTOR = 15
+                    const height = insulin * INSULIN_SCALE_FACTOR
+
+                    return <g className={styles.insulinBar} transform={`translate(${x(date)}, ${y(0)})`}>
+                        <rect y={-height} height={height} width="5"></rect>
+
+                        <text y={-height - 20}>
+                            {`${insulin.toFixed(1)}U`}
+                        </text>
+                    </g>
+                })}
+
+
+                {/* In range box. */}
                 <rect
                     x={0}
                     y={y(inRangeShapeDescription.end)}
@@ -347,13 +315,9 @@ export const Chart = (props) => {
                     fill='#7fff7f30' />
             </g>
         </g>
-{/* 
-        <g>
-
-        </g> */}
+        
     </svg>
 }
-
 
 
 // Treatment schema.
