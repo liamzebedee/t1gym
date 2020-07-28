@@ -19,7 +19,12 @@ export const Chart = (props) => {
 
     let margin = { top: 1, right: 30, bottom: 30, left: 60 }
     const width = 1200
-    const height = 600
+    const height = 400
+
+    const tempBasalArea = {
+        height: 200,
+        marginTop: 50
+    }
 
     // 
     // x and y curves.
@@ -27,8 +32,8 @@ export const Chart = (props) => {
 
     // Domain is supposed to be a full day by default.
     let extent = d3.extent(data, function (d) { return d.date })
-    function calcExtent(extent) {
-        if (props.dynamicExtent) return extent
+    function calcExtent(extent, dynamicExtent) {
+        if (dynamicExtent) return extent
         let start = DateTime.fromJSDate(new Date(extent[0])).set({
             hour: 0,
             minute: 0
@@ -41,7 +46,7 @@ export const Chart = (props) => {
     }
 
     const x = d3.scaleTime()
-        .domain(calcExtent(extent))
+        .domain(calcExtent(extent, props.dynamicExtent))
         .range([0, width])
         .clamp(true)
 
@@ -127,13 +132,43 @@ export const Chart = (props) => {
         if(yi === 0) return data[yi]
         else return data[yi - 1]
     }
+
+    function generateTempBasalEntries(fromDate, toDate) {
+        let entries = []
+        let intervals = []
+
+        events
+        .filter(event => event.eventType === 'Temp Basal')
+        .map((event, i) => {
+            const {
+                duration,
+                rate,
+                timestamp
+            } = event
+            
+            let date = +new Date(timestamp)
+            const from = date
+            const to = DateTime.fromJSDate(new Date(date))
+                .plus({ minutes: duration })
+                .toMillis()
+            
+            intervals.push({
+                from,
+                to,
+                rate,
+                duration
+            })
+        })
         
-    return <svg
+
+    }
+        
+    return <>
+    <svg
         // width={'100%'} height={'100%'}
-        viewBox={`0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`}
+        viewBox={`0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom + tempBasalArea.height + tempBasalArea.marginTop}`}
         className={styles.chart}>
         <g transform={`translate(${margin.left}, ${margin.top})`}>
-
             {/* Axes. */}
             <g ref={axisRef}>
             </g>
@@ -265,6 +300,7 @@ export const Chart = (props) => {
                     if(!carbs) return
 
                     const date = new Date(event.timestamp)
+                    if(date < extent[0]) return // TODO(liamz): quick hack to work around out-of-date-range events.
                     const CARB_SCALE_FACTOR = 3
                     const height = carbs * CARB_SCALE_FACTOR
 
@@ -292,6 +328,7 @@ export const Chart = (props) => {
                     if(!insulin) return
 
                     const date = new Date(event.timestamp)
+                    if(date < extent[0]) return // TODO(liamz): quick hack to work around out-of-date-range events.
                     const INSULIN_SCALE_FACTOR = 15
                     const height = insulin * INSULIN_SCALE_FACTOR
 
@@ -316,7 +353,71 @@ export const Chart = (props) => {
             </g>
         </g>
         
+        <g transform={`translate(${margin.left}, ${margin.top + height + tempBasalArea.marginTop})`}>
+            <TempBasalChart
+                height={tempBasalArea.height}
+                width={width}
+                extent={calcExtent(extent)}
+                events={events}
+                />
+        </g>
     </svg>
+    </>
+}
+
+export const TempBasalChart = ({ height = 200, width, extent, events }) => {
+    const x = d3.scaleTime()
+        .domain(extent)
+        .range([0, width])
+        // .clamp(true)
+
+    const y = d3.scaleLinear()
+        .domain([0, 10])
+        .range([height, 0])
+
+
+    const xAxisRef = el => {
+        el && d3.select(el).call(
+            d3.axisLeft(y)
+        )
+    }
+
+    let flip = false
+    const yAxisRef = el => {
+        let yAxis = d3.axisBottom(x).ticks(5)
+        d3.select(el).call(yAxis)
+    }
+
+    const area = d3.area()
+        .x(function(d) { return x(d.date) })
+        .y0(height)
+        .y1(function(d) { return y(d.rate) })
+        .defined(d => d.date >= extent[0]) // TODO(liamz): quick hack to work around out-of-date-range events.
+        .curve(d3.curveStep)
+    
+    const data = events
+    .filter(event => event.eventType === 'Temp Basal')
+    .map((event, i) => {
+        const {
+            duration,
+            rate
+        } = event
+
+        const date = new Date(event.timestamp)
+        return { date, rate }
+    })
+
+    return <g transform='translate(0,00)'>
+        {/* Axes. */}
+        <g ref={xAxisRef}>
+        </g>
+        <g ref={yAxisRef} transform={`translate(0, ${height})`}>
+        </g>
+
+        <path
+            d={area(data)}
+            class={styles.tempBasal}/>
+    </g>
 }
 
 
@@ -376,4 +477,34 @@ export const Chart = (props) => {
         "enteredBy": "openaps://medtronic/722",
         "utcOffset": 600
     }
+
+
+
+    {
+ "_id": "5f1610b68b6aca48aacec0ec",
+ "duration": 30,
+ "raw_duration": {
+  "timestamp": "2020-07-21T07:44:22+10:00",
+  "_type": "TempBasalDuration",
+  "id": "FgFW7AdVFA==",
+  "duration (min)": 30
+ },
+ "timestamp": "2020-07-21T07:44:22+10:00",
+ "absolute": 1.35,
+ "rate": 1.35,
+ "raw_rate": {
+  "timestamp": "2020-07-21T07:44:22+10:00",
+  "_type": "TempBasal",
+  "id": "MzZW7AdVFAA=",
+  "temp": "absolute",
+  "rate": 1.35
+ },
+ "eventType": "Temp Basal",
+ "medtronic": "mm://openaps/mm-format-ns-treatments/Temp Basal",
+ "created_at": "2020-07-20T21:44:22.000Z",
+ "enteredBy": "openaps://medtronic/722",
+ "utcOffset": 600,
+ "carbs": null,
+ "insulin": null
+}
     */
