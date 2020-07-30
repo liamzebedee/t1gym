@@ -42,6 +42,14 @@ const Annotation = ({ startTime, endTime, tags, notes, active }) => {
     </>
 }
 
+function isCarbTreatment(treatment) {
+    return treatment.eventType == 'Meal Bolus'
+}
+function isInsulinTreatment(treatment) {
+    return (treatment.eventType == 'Meal Bolus' && treatment.insulin != null)
+        || treatment.eventType == 'Correction Bolus'
+}
+
 export const Annotator = (props) => {
     const { data, treatments, onAnnotation } = props
 
@@ -73,13 +81,33 @@ export const Annotator = (props) => {
 
         if(annotationData.length) {
             // TODO(liamz): I don't exactly know what's going on here.
+            
+            // BG stats.
             const startBG = annotationData[0].sgv
             const endBG = _.last(annotationData).sgv
             const deltaBG = endBG - startBG
+
+            // Insulin/carb stats.
+            const treatmentsWithinRange = treatments.filter(d => {
+                // TODO: Treatments use the `timestamp` field, but we use Unix timestamps throughout
+                // the codebase. Would be wise to be consistent.
+                const date = +new Date(d.timestamp)
+                return (date >= startTime) && (date <= endTime)
+            })
+            const totalCarbs = treatmentsWithinRange
+                .filter(isCarbTreatment)
+                .reduce((prev, curr) => prev + curr.carbs, 0)
+            const totalInsulin = treatmentsWithinRange
+                .filter(isInsulinTreatment)
+                .map(x => (console.log(x), x))
+                .reduce((prev, curr) => prev + curr.insulin, 0)
+
             setStats({
                 startBG,
                 endBG,
-                deltaBG
+                deltaBG,
+                totalCarbs,
+                totalInsulin
             })
         }
 

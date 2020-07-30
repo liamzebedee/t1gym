@@ -87,6 +87,12 @@ export const AnnotationInputControl = ({ startTime, endTime, onSave, onDiscard, 
                 <span  style={{ width: 150 }}><b>Δ BGL</b>: {(stats.deltaBG || 0) > 1 ? '+' : ''}{(stats.deltaBG || 0).toFixed(1)}mmol</span>
             </Flex>
 
+            <Flex flexDirection="row">
+                <span style={{ width: 150 }}><b>Total Carbs</b>: {(stats.totalCarbs || 0).toFixed(0)}g</span>
+                <Box paddingRight="5"></Box>
+                <span  style={{ width: 150 }}><b>Total insulin</b>: {(stats.totalInsulin || 0).toFixed(1)}U</span>
+            </Flex>
+
             <FormControl>
                 <FormLabel htmlFor="end-time">Event tags</FormLabel>
                 <TagsEditor onChange={handleTagsChange} key={editKey} />
