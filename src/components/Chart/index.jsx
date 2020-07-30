@@ -371,8 +371,9 @@ export const TempBasalChart = ({ height = 200, width, extent, events }) => {
         .range([0, width])
         // .clamp(true)
 
+    const MAX_TEMP_BASAL_UNITS = 6
     const y = d3.scaleLinear()
-        .domain([0, 10])
+        .domain([0, MAX_TEMP_BASAL_UNITS])
         .range([height, 0])
 
 
