@@ -4,13 +4,18 @@ import { Duration, DateTime } from 'luxon'
 
 import MongoClient from 'mongodb'
 const MONGO_DB_URL = process.env.MONGO_DB_URL
+const MONGO_DB_NAME = process.env.MONGO_DB_NAME
+
 if(!MONGO_DB_URL) {
     throw new Error("MONGO_DB_URL is undefined. Cannot connect to Nightscout.")
+}
+if(!MONGO_DB_NAME) {
+    throw new Error("MONGO_DB_NAME is undefined. Cannot connect to Nightscout.")
 }
 
 async function fetchNightscoutData(range) {
     const client = await MongoClient.connect(MONGO_DB_URL)
-    const db = client.db('heroku_hfwzth9r')
+    const db = client.db(MONGO_DB_NAME)
 
     // Nightscout stores treatments with a timestamp field encoded as a UTC date string.
     // Ordering with $gte/$lte in queries is based on string comparison,
