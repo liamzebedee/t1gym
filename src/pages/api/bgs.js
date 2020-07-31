@@ -4,18 +4,23 @@ import { getMongoDatabase } from '../../api'
 
 async function fetchNightscoutData(range) {
     const db = await getMongoDatabase()
-    // Nightscout stores treatments with a timestamp field encoded as a UTC date string.
-    // Ordering with $gte/$lte in queries is based on string comparison,
-    // and so we have to normalise the dates we use to query into the UTC+0 timezone.
-    // This contrasts with entries, which have the numeric Unix timestamp as a `date` field.
-    // Sigh.
+
+    // (1) Nightscout stores treatments with a created_at field encoded as a UTC date string.
+    //     Ordering with $gte/$lte in queries is based on string comparison,
+    //     and so we have to normalise the dates we use to query into the UTC+0 timezone.
+    //     This contrasts with entries, which have the numeric Unix timestamp as a `date` field. Sigh.
+    //  
+    // (2) We use `created_at`, which is ALWAYS in the UTC timezone.
+    //     The `timestamp` field has varying timezone, depending on implementation.
+    //     In Loop, it is in the UTC timezone.
+    //     In OpenAPS, it is in the user's local timezone.
     const treatmentTimeRange = range.map(v => {
         return v.setZone('utc').toISO()
     })
 
     const treatments = await db.collection('treatments')
         .find({
-            timestamp: {
+            created_at: {
                 $gte: treatmentTimeRange[0],
                 $lte: treatmentTimeRange[1],
             }
