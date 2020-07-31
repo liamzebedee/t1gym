@@ -1,0 +1,111 @@
+{
+_id: "5f1904678b6aca48aaf7421e",
+programmed: 2.2,
+eventType: "Correction Bolus",
+type: "normal",
+duration: 119.58333333333333,
+created_at: "2020-07-22T08:23:35.000Z",
+unabsorbed: 0,
+timestamp: "2020-07-22T08:23:35Z",
+enteredBy: "loop://Liam Edwards-Playne’s iPhone",
+insulin: 1.5,
+utcOffset: 0
+}
+
+
+It's not finding the treatment 
+It's found the treatment for 
+
+    const range = [
+        new Date("07-22-2020"),
+        new Date("07-23-2020")
+    ].map(d => DateTime.fromJSDate(d))
+
+
+But the more recent ranges, not so? 
+
+H: a difference with openaps vs. loop?
+
+
+
+31 July 2020
+
+The two missing events:
+
+{
+_id: "5f2351bf8b6aca48aa7ae586",
+enteredBy: "loop://Liam Edwards-Playne’s iPhone",
+eventType: "Meal Bolus",
+created_at: "2020-07-30T23:03:09.000Z",
+absorptionTime: 180,
+timestamp: "2020-07-30T23:03:09Z",
+carbs: 60,
+utcOffset: 0
+},
+
+{
+_id: "5f23526d8b6aca48aa7af9a5",
+type: "normal",
+eventType: "Correction Bolus",
+unabsorbed: 0,
+timestamp: "2020-07-30T23:03:39Z",
+created_at: "2020-07-30T23:03:39.000Z",
+enteredBy: "loop://Liam Edwards-Playne’s iPhone",
+programmed: 7.5,
+duration: 5,
+insulin: 7.5,
+utcOffset: 0
+},
+
+
+The `timestamp` field entered by Loop is in the UTC timezone.
+
+The `timestamp` entered by OpenAPS is in the user's local timezone.
+The `created_at` entered by OpenAPS is in the UTC timezone.
+
+ "timestamp": "2020-07-22T22:55:46+10:00",
+ "created_at": "2020-07-22T12:55:46.000Z",
+
+H: could use `created_at` instead? 
+
+vs.
+
+
+{
+ "_id": "5f1904678b6aca48aaf74228",
+ "duration": 0,
+ "bolus": {
+  "timestamp": "2020-07-22T22:55:46+10:00",
+  "_type": "Bolus",
+  "id": "ARAQAG73VhYU",
+  "amount": 1.6,
+  "programmed": 1.6,
+  "unabsorbed": 0,
+  "duration": 0
+ },
+ "timestamp": "2020-07-22T22:55:46+10:00",
+ "created_at": "2020-07-22T12:55:46.000Z",
+ "ratio": "11",
+ "wizard": {
+  "timestamp": "2020-07-22T22:55:46+10:00",
+  "_type": "BolusWizard",
+  "id": "W4Fu9xYWFACQCxRBIAAAABAAEEE=",
+  "carb_input": 0,
+  "carb_ratio": 11,
+  "correction_estimate": 0,
+  "food_estimate": 0,
+  "unabsorbed_insulin_total": 1.6,
+  "bolus_estimate": 1.6,
+  "bg": 0,
+  "bg_target_low": 6.5,
+  "bg_target_high": 6.5,
+  "sensitivity": 2,
+  "units": "mmol"
+ },
+ "eventType": "Correction Bolus",
+ "insulin": 1.6,
+ "notes": "Normal bolus with wizard. Calculated IOB: -0.203 Programmed bolus 1.6 Delivered bolus 1.6 Percent delivered: 100% Food estimate 0 Correction estimate 0 Bolus estimate 1.6 Target low 6.5 Target high 6.5 Hypothetical glucose delta -3.2",
+ "medtronic": "mm://openaps/mm-format-ns-treatments/Correction Bolus",
+ "enteredBy": "openaps://medtronic/722",
+ "utcOffset": 600
+}
