@@ -375,6 +375,11 @@ export const TempBasalChart = ({ height = 200, width, extent, events }) => {
     const y = d3.scaleLinear()
         .domain([0, MAX_TEMP_BASAL_UNITS])
         .range([height, 0])
+        // We clamp the range, as I've noticed Loop has erroneously recorded
+        // a temp basal much above the user-defined safety limits. The basal was
+        // 35U for 2mins or so. Clamping is a simple sanity check for this
+        // behaviour, as it is usually replaced by a reasonable temp.
+        .clamp(true)
 
 
     const xAxisRef = el => {
@@ -393,7 +398,7 @@ export const TempBasalChart = ({ height = 200, width, extent, events }) => {
         .x(function(d) { return x(d.date) })
         .y0(height)
         .y1(function(d) { return y(d.rate) })
-        .defined(d => d.date >= extent[0]) // TODO(liamz): quick hack to work around out-of-date-range events.
+        // .defined(d => d.date >= extent[0]) // TODO(liamz): quick hack to work around out-of-date-range events.
         .curve(d3.curveStep)
     
     const data = events
