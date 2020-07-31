@@ -53,6 +53,6 @@
     "ts-loader": "^8.0.1"
   },
   "engines": {
-    "node": "13.x"
+    "node": "12.x"
   }
 }
