@@ -17,14 +17,23 @@ export const Chart = (props) => {
     const annotations = props.annotations || []
     const events = props.events || []
 
-    let margin = { top: 1, right: 30, bottom: 30, left: 60 }
-    const width = 1200
-    const height = 400
-
+    // Layout.
+    // 
+    
     const tempBasalArea = {
         height: 200,
         marginTop: 50
     }
+
+    let margin = { top: 1, right: 30, bottom: 30, left: 60 }
+    
+    let width = 1200
+    let height = 400
+    
+    if(!props.showTempBasalChart) {
+        height += tempBasalArea.height
+    }
+
 
     // 
     // x and y curves.
@@ -353,6 +362,7 @@ export const Chart = (props) => {
             </g>
         </g>
         
+        {props.showTempBasalChart &&
         <g transform={`translate(${margin.left}, ${margin.top + height + tempBasalArea.marginTop})`}>
             <TempBasalChart
                 height={tempBasalArea.height}
@@ -360,7 +370,7 @@ export const Chart = (props) => {
                 extent={calcExtent(extent)}
                 events={events}
                 />
-        </g>
+        </g> }
     </svg>
     </>
 }

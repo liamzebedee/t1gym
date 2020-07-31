@@ -193,6 +193,7 @@ export const Annotator = (props) => {
                     onEndBrush={onEndBrush}
                     annotations={(previewedAnnotation != null) && [ annotations[previewedAnnotation] ]}
                     events={treatments}
+                    showTempBasalChart={true}
                     />
             </Flex>
         </Flex>
