@@ -149,7 +149,7 @@ export const ReportCard = ({ }) => {
                 </Box>
 
                 <Box>
-                    <Heading size="sm">HBa1c</Heading>
+                    <Heading size="sm">HBa1c est.</Heading>
                     <div>
                         <Text fontSize="2xl">{statistics.hba1c}%</Text>
                     </div>
@@ -169,14 +169,17 @@ export const ReportCard = ({ }) => {
         <StatGroup>
             <Stat>
                 <StatLabel>
-                    <Heading size="lg" pb={5} pt={5}>30 Day Report Card</Heading>
+                    <Heading size="lg" pb={5} pt={5}>30 Day Progress Report</Heading>
                 </StatLabel>
             </Stat>
         </StatGroup>
 
         <Flex direction="row">
             <Flex direction="column" flex="1">
-                {data === null && <CircularProgress isIndeterminate size="sm" color="green" />}
+                {data === null && <div>
+                    <CircularProgress isIndeterminate size="sm" color="green"/> Loading BG's from Nightscout...
+                </div>}
+
                 <svg 
                 className={styles.reportCard} 
                 viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}

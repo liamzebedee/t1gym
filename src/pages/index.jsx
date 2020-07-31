@@ -3,7 +3,6 @@ import { formatPlotlyDate } from './experiment'
 import * as d3 from "d3";
 import { useEffect, useRef, useState } from 'react';
 
-
 import { ThemeProvider, CSSReset, TabList, Tabs, TabPanels, Tab, TabPanel, Box, Stack, Tag, TagLabel, Heading, CircularProgress } from "@chakra-ui/core";
 import { useReducer } from "react";
 import { useLayoutEffect } from "react";
@@ -12,8 +11,6 @@ import { Chart } from "../components/Chart";
 import { Annotator } from '../components/Annotator'
 import * as luxon from 'luxon'
 import { Duration, DateTime } from 'luxon'
-
-
 
 import DatabaseService from '../misc/db_service'
 import { Analyse } from '../components/Analyse';
@@ -37,8 +34,10 @@ const Dashboard = () => {
         <Tabs variant="soft-rounded" variantColor="green">
             <TabList>
                 <Tab>Overview</Tab>
-                <Tab>Logbook</Tab>
-                <Tab>Patterns</Tab>
+                {process.env.NEXT_PUBLIC_AB_LOGBOOK && 
+                <Tab>Logbook</Tab> }
+                {process.env.NEXT_PUBLIC_AB_PATTERNS && 
+                <Tab>Patterns</Tab> }
             </TabList>
 
             <TabPanels>
@@ -55,17 +54,22 @@ const Dashboard = () => {
                     </Box>
                 </TabPanel>
 
+                {process.env.NEXT_PUBLIC_AB_LOGBOOK && 
                 <TabPanel>
                     <Analyse {...{loadingBGData, bgs}}/>
-                </TabPanel>
+                </TabPanel> }
 
+                {process.env.NEXT_PUBLIC_AB_PATTERNS && 
                 <TabPanel>
                     <Scenarios/>
-                </TabPanel>
+                </TabPanel> }
+                
             </TabPanels>
         </Tabs>
 
-        
+        {/* <footer>
+            <small>t1 gym - v1.0.0-diabeta</small>
+        </footer> */}
     </Box>
 }
 
