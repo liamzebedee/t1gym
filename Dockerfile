@@ -1,4 +1,4 @@
-FROM node:13-alpine
+FROM node:12-alpine
 
 RUN mkdir -p /app
 
@@ -6,8 +6,10 @@ WORKDIR /app
 
 # Install node modules.
 ADD package.json /app/package.json
-RUN npm install
+RUN yarn
 
 ADD . /app
 
-CMD npm run start -p $PORT
+RUN npm run build
+
+CMD npm run start
