@@ -1,3 +1,4 @@
+const admin = require("firebase-admin")
 const atob = require('atob')
 
 // We encode the Google serviceAccountKey in base64.
@@ -8,9 +9,23 @@ if(!serviceAccountBase64) {
 }
 const serviceAccount = JSON.parse(atob(serviceAccountBase64))
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://diasim.firebaseio.com"
-})
+// Next.js doesn't have a catch-all initialization function for the API
+// server. So we will call FirebaseAdmin.initializeApp multiple times.
+// Copied from: https://leerob.io/blog/nextjs-firebase-serverless
+try {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: "https://diasim.firebaseio.com"
+  })
+} catch (error) {
+  /*
+   * We skip the "already exists" message which is
+   * not an actual error when we're hot-reloading.
+   */
+  if (!/already exists/u.test(error.message)) {
+    // eslint-disable-next-line no-console
+    console.error('Firebase admin initialization error', error.stack);
+  }
+}
 
 export { admin }
