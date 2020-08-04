@@ -3,7 +3,7 @@ import { fetchSgvs } from '../../api'
 import { authMiddleware } from '../../api/middleware'
 
 export default async (req, res) => {
-    const user = authMiddleware(req, res)
+    const user = await authMiddleware(req, res)
 
     let { startTime, endTime } = req.query
     let range = [startTime, endTime].map(x => DateTime.fromJSDate(new Date(x)))
