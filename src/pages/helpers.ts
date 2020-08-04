@@ -245,12 +245,14 @@ export function usePromiseLoadingStateWithError(fn1) {
     //     error
     // }
     let [state, setState] = useState({
-        status: ''
+        status: '',
+        error: null
     })
     
     async function fn() {
         setState({
-            status: 'loading'
+            status: 'loading',
+            error: null
         })
         try {
             await fn1(arguments)
@@ -262,7 +264,8 @@ export function usePromiseLoadingStateWithError(fn1) {
             return
         }
         setState({
-            status: 'ok'
+            status: 'ok',
+            error: null
         })
     }
     return [fn, state]
