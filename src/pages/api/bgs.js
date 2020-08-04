@@ -1,5 +1,4 @@
 import { Duration, DateTime } from 'luxon'
-import MongoClient from 'mongodb'
 import { fetchNightscoutData } from '../../api'
 import { authMiddleware } from '../../api/middleware'
 

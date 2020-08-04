@@ -1,6 +1,6 @@
 import MongoClient from 'mongodb'
 
-const admin = require("firebase-admin")
+import { admin } from '../api/firebase'
 
 export async function getMongoDatabase(userId) {
     const userRecord = await admin.database().ref(`/users/${userId}`).once('value').then(snapshot => snapshot.val())

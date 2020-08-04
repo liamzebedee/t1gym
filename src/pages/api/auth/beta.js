@@ -2,7 +2,7 @@ import { Duration, DateTime } from 'luxon'
 import { fetchSgvs } from '../../../api'
 import { getInviteCodeDetails } from '../../../api/middleware'
 
-const admin = require("firebase-admin")
+import { admin } from '../../../api/firebase'
 
 export default async (req, res) => {
     try {

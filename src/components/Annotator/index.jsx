@@ -2,7 +2,6 @@ import { Box, Flex, Stack, Heading, Text, Tag, TagLabel } from "@chakra-ui/core"
 import { useRef, useState } from 'react';
 import * as _ from 'lodash'
 import { DateTime } from 'luxon'
-import DatabaseService from '../../misc/db_service';
 import { getStartOfDayForTime } from '../../pages/helpers';
 import { AnnotationInputControl } from '../AnnotationInputControl';
 import { Chart } from "../Chart";

@@ -1,4 +1,4 @@
-const admin = require("firebase-admin")
+import { admin } from './firebase'
 
 export async function getInviteCodeDetails(req, res) {
     const code = req.query['code']
