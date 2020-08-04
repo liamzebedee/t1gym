@@ -18,12 +18,15 @@
     "@storybook/cli": "^5.3.19",
     "chart.js": "^2.9.3",
     "chrono-node": "^1.4.6",
+    "cookie": "^0.4.1",
     "d3": "^5.16.0",
     "dexie": "^3.0.1",
     "dexie-observable": "^1.0.0-beta.7",
     "emotion-theming": "^10.0.27",
     "esm": "^3.2.25",
     "everpolate": "^0.0.3",
+    "firebase": "^7.17.1",
+    "firebase-admin": "^9.0.0",
     "localforage": "^1.7.3",
     "lodash": "^4.17.15",
     "luxon": "^1.24.1",
@@ -36,7 +39,8 @@
     "react-dom": "^16.13.1",
     "simple-statistics": "^7.1.0",
     "typescript": "^3.9.6",
-    "uuid": "^8.2.0"
+    "uuid": "^8.2.0",
+    "vercel": "^19.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.10.5",
