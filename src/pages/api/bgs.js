@@ -1,9 +1,10 @@
 import { Duration, DateTime } from 'luxon'
 import MongoClient from 'mongodb'
 import { getMongoDatabase } from '../../api'
+import { authMiddleware } from '../../api/middleware'
 
-async function fetchNightscoutData(range) {
-    const db = await getMongoDatabase()
+async function fetchNightscoutData(user, range) {
+    const db = await getMongoDatabase(user.MONGO_DB_URL, user.MONGO_DB_NAME)
 
     // (1) Nightscout stores treatments with a created_at field encoded as a UTC date string.
     //     Ordering with $gte/$lte in queries is based on string comparison,
@@ -47,6 +48,8 @@ async function fetchNightscoutData(range) {
 }
 
 export default async (req, res) => {
+    const user = authMiddleware(req, res)
+
     // Split data into day-by-day view.
     const DAYS_TO_RETRIEVE = 14
     let referenceDate = DateTime.local()
@@ -74,10 +77,11 @@ export default async (req, res) => {
     ranges = ranges.reverse()
     
     const datums = ranges.map(async range => {
+        const data = await fetchNightscoutData(user, range)
         return {
             from: range[0].toString(),
             to: range[1].toString(),
-            ...await fetchNightscoutData(range)
+            ...data
         }
     })
 
