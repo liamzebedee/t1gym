@@ -24,23 +24,21 @@ export default function MyApp({ Component, pageProps }) {
     }
     
     // Initialize Firebase
-    firebase.initializeApp(firebaseConfig)
-    firebase.analytics()
-    
-    const auth = firebase.auth()
-    auth.onAuthStateChanged(async function(user) {
-      if (user) {
-        // For later calls to the backend, we use the `token` as a session cookie.
-        // It will be used to identify the user using the Firebase API.
-        // Since Firebase auth tokens expire after a certain amount of time,
-        // we refresh the token upon load.
-        const token = await user.getIdToken(true)
-        console.debug(`Setting Firebase token to ${token}`)
-        document.cookie = `token=${token}; path=/`
-
-        setLoaded(true)
+    try {
+      firebase.initializeApp(firebaseConfig)
+    } catch (error) {
+      /*
+       * We skip the "already exists" message which is
+       * not an actual error when we're hot-reloading.
+       */
+      if (!/already exists/u.test(error.message)) {
+        // eslint-disable-next-line no-console
+        console.error('Firebase admin initialization error', error.stack);
       }
-    })
+    }
+    firebase.analytics()
+
+    setLoaded(true)
   }
 
   useEffect(() => {

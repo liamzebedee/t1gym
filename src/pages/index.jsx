@@ -78,12 +78,15 @@ import { Scenarios } from '../components/Scenarios'
 import { getStartOfDayForTime, usePromiseLoadingState, convertData } from './helpers'
 import { AnnotatorContainer } from '../components/Annotator/Container';
 import { ReportCard } from '../components/ReportCard';
+import { FirebaseAuthWrapper } from '../misc/wrappers';
 
 
 
 export default () => {
-    return <ThemeProvider>
-        <CSSReset />
-        <Dashboard/>
-    </ThemeProvider>
+    return <FirebaseAuthWrapper>
+        <ThemeProvider>
+            <CSSReset />
+            <Dashboard/>
+        </ThemeProvider>
+    </FirebaseAuthWrapper>
 }
