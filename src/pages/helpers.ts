@@ -236,6 +236,37 @@ export function usePromiseLoadingState(fn1) {
     return [fn, loading]
 }
 
+export function usePromiseLoadingStateWithError(fn1) {
+    // This is based off the Rust Result<T> type.
+    // See: https://doc.rust-lang.org/std/result/
+    
+    // {
+    //     status: 'loading' | 'ok' | 'error',
+    //     error
+    // }
+    let [state, setState] = useState({
+        status: ''
+    })
+    
+    async function fn() {
+        setState({
+            status: 'loading'
+        })
+        try {
+            await fn1(arguments)
+        } catch(error) {
+            setState({
+                status: 'error',
+                error
+            })
+            return
+        }
+        setState({
+            status: 'ok'
+        })
+    }
+    return [fn, state]
+}
 
 export function convertFromMgToMmol(v) {
     return v / 18.
