@@ -16,19 +16,6 @@ import DatabaseService from '../misc/db_service'
 import { Analyse } from '../components/Analyse';
 
 const Dashboard = () => {
-    const [bgs, setBgs] = useState(null)
-    const [getBGData, loadingBGData] = usePromiseLoadingState(getBGData_)
-
-    async function getBGData_() {
-        const data = await fetch('/api/bgs').then(res => res.json())
-        setBgs(data)
-    }
-
-    useEffect(() => {
-        DatabaseService.connect()
-        getBGData()
-    }, [])
-
     return <Box p="5">
         <Heading pt="5" pb="5">Type One Gym</Heading>
         <Tabs variant="soft-rounded" variantColor="green">
@@ -56,7 +43,7 @@ const Dashboard = () => {
 
                 {process.env.NEXT_PUBLIC_AB_LOGBOOK && 
                 <TabPanel>
-                    <Analyse {...{loadingBGData, bgs}}/>
+                    <Analyse/>
                 </TabPanel> }
 
                 {process.env.NEXT_PUBLIC_AB_PATTERNS && 
@@ -73,14 +60,11 @@ const Dashboard = () => {
     </Box>
 }
 
-
 import { Scenarios } from '../components/Scenarios'
 import { getStartOfDayForTime, usePromiseLoadingState, convertData } from './helpers'
 import { AnnotatorContainer } from '../components/Annotator/Container';
 import { ReportCard } from '../components/ReportCard';
 import { FirebaseAuthWrapper } from '../misc/wrappers';
-
-
 
 export default () => {
     return <FirebaseAuthWrapper>
