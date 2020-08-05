@@ -1,6 +1,6 @@
 import { Duration, DateTime } from 'luxon'
-import { fetchNightscoutData } from '../../api'
-import { authMiddleware } from '../../api/middleware'
+import { fetchNightscoutData } from '../../../api'
+import { authMiddleware } from '../../../api/middleware'
 
 export default async (req, res) => {
     const user = await authMiddleware(req, res)
