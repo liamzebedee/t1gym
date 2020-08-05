@@ -4,9 +4,13 @@ import { authMiddleware } from '../../../api/middleware'
 
 export default async (req, res) => {
     const user = await authMiddleware(req, res)
+    const tz = req.query.tz
+    if(!tz) {
+        throw new Error(`Request must specify a timezone using tz`)
+    }
 
     const DAYS_TO_RETRIEVE = 7*5 // 5 weeks
-    let today = DateTime.local()
+    let today = DateTime.local().setZone(tz)
     let toDate = today
     let fromDate = toDate
         .minus({ days: DAYS_TO_RETRIEVE-1 })

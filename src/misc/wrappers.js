@@ -1,5 +1,6 @@
 import * as firebase from "firebase/app";
 import { useState, useEffect } from "react";
+import { DateTime } from "luxon";
 
 export const FirebaseAuthWrapper = ({ children }) => {
     const [loaded, setLoaded] = useState(false)
@@ -28,3 +29,15 @@ export const FirebaseAuthWrapper = ({ children }) => {
     if (!loaded) return null
     return children
 }
+
+
+
+let tz
+tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+if(!tz) {
+    throw new Error("Couldn't determine timezone.")
+}
+console.debug(`Setting user timezone to - ${tz}`)
+DateTime.defaultZoneName = tz
+
+export { tz }

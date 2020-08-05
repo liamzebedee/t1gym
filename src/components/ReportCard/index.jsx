@@ -12,6 +12,8 @@ import { Chart } from '../Chart';
 import styles from './styles.module.css'
 import { convertData } from '../../pages/helpers';
 import { useHoverPickSelector } from '../../misc/hooks';
+import { tz } from '../../misc/wrappers';
+import queryString from 'query-string'
 
 function dataToDayByDay(longitudalData) {
     let data = _.sortBy(longitudalData, ['date'])
@@ -92,7 +94,10 @@ export const ReportCard = ({ }) => {
     })
 
     async function load() {
-        const longitudalData = await fetch(`/api/stats`).then(res => res.json())
+        const params = {
+            tz
+        }
+        const longitudalData = await fetch(`/api/bgs/longitudal?${queryString.stringify(params)}`).then(res => res.json())
 
         const statistics = calcStats(longitudalData)
 
