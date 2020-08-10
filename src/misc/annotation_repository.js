@@ -35,7 +35,12 @@ class AnnotationRepository {
             .endAt(firebaseDateRange[1])
             .get()
             .then((querySnapshot) => {
-                return querySnapshot.docs.map(doc => doc.data()).map(fromFirebaseFormat)
+                return querySnapshot.docs
+                    .map(doc => {
+                        // TODO(liamz): Ugly ugly ugly.
+                        return { id: doc.id, ...doc.data() }
+                    })
+                    .map(fromFirebaseFormat)
             })
             
     }

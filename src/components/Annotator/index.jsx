@@ -116,11 +116,9 @@ export const Annotator = (props) => {
 
     let [annotations, setAnnotations] = useState(props.annotations || [])
     async function onSaveAnnotation(annotation) {
-        console.log(annotation)
-
         await props.onSaveAnnotation(annotation)
 
-        setAnnotations([ ...annotations, annotation])
+        setAnnotations([ ...annotations, annotation ])
         setBrush(null)
     }
     function onDiscardAnnotation() {
@@ -151,11 +149,14 @@ export const Annotator = (props) => {
                             <TableBody>
                             {
                                 _.sortBy(annotations, ['startTime'])
-                                .map((x, i) => <TableRow bg={i % 2 == 0 ? 'white' : 'gray.50'} className={`${styles.annotation} ${selectedAnnotation === i && styles.active}`}  
-                                    onClick={() => onSelectAnnotation(i)}
-                                    onMouseEnter={() => onHoverAnnotation(i)}
+                                .map((x, i) => <TableRow 
+                                    key={x.id} 
+                                    bg={i % 2 == 0 ? 'white' : 'gray.50'} 
+                                    className={`${styles.annotation} ${selectedAnnotation === x.id && styles.active}`}
+                                    onClick={() => onSelectAnnotation(x.id)}
+                                    onMouseEnter={() => onHoverAnnotation(x.id)}
                                     onMouseLeave={() => onHoverAnnotation(null)}>
-                                    <Annotation {...x} key={`${x.startTime} ${x.endTime} ${i}`} active={selectedAnnotation === i}/>
+                                    <Annotation {...x} active={selectedAnnotation === x.id}/>
                                 </TableRow>) 
                             }
                             </TableBody>
@@ -190,7 +191,7 @@ export const Annotator = (props) => {
                 <Chart 
                     data={data} 
                     onEndBrush={onEndBrush}
-                    annotations={(previewedAnnotation != null) && [ annotations[previewedAnnotation] ]}
+                    annotations={(previewedAnnotation != null) && [ _.find(annotations, { id: previewedAnnotation }) ]}
                     events={treatments}
                     showTempBasalChart={true}
                     />
