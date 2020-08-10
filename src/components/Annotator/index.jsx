@@ -141,8 +141,8 @@ export const Annotator = (props) => {
                         <Table>
                             <TableHead>
                                 <TableRow>
-                                    <TableHeader>Time</TableHeader>
-                                    <TableHeader>Tags</TableHeader>
+                                    <TableHeader width={80}>Time</TableHeader>
+                                    <TableHeader width={200}>Tags</TableHeader>
                                     <TableHeader>Notes</TableHeader>
                                 </TableRow>
                             </TableHead>
