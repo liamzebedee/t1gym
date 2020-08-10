@@ -404,24 +404,28 @@ export const TempBasalChart = ({ height = 200, width, extent, events }) => {
         d3.select(el).call(yAxis)
     }
 
+    const data = events
+        .filter(event => event.eventType === 'Temp Basal')
+        .map((event, i) => {
+            const {
+                duration,
+                rate
+            } = event
+
+            const date = new Date(event.timestamp)
+            const expires = new Date(date.getTime() + (duration * MINUTE))
+            return { date, expires, duration, rate }
+        })
+        // .filter(d => d.duration > 6)
+    
+
     const area = d3.area()
-        .x(function(d) { return x(d.date) })
+        .x(d => x(d.date))
+        .x0(d => x(d.expires))
         .y0(height)
         .y1(function(d) { return y(d.rate) })
-        // .defined(d => d.date >= extent[0]) // TODO(liamz): quick hack to work around out-of-date-range events.
+        .defined(d => d.rate !== 0)
         .curve(d3.curveStep)
-    
-    const data = events
-    .filter(event => event.eventType === 'Temp Basal')
-    .map((event, i) => {
-        const {
-            duration,
-            rate
-        } = event
-
-        const date = new Date(event.timestamp)
-        return { date, rate }
-    })
 
     return <g transform='translate(0,00)'>
         {/* Axes. */}
