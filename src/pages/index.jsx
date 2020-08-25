@@ -22,7 +22,7 @@ const Dashboard = () => {
             <TabList>
                 <Tab>Overview</Tab>
                 {process.env.NEXT_PUBLIC_AB_LOGBOOK && 
-                <Tab>Logbook</Tab> }
+                <Tab>Analyse</Tab> }
                 {process.env.NEXT_PUBLIC_AB_PATTERNS && 
                 <Tab>Patterns</Tab> }
             </TabList>

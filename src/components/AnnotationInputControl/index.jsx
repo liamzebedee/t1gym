@@ -99,7 +99,7 @@ export const AnnotationInputControl = ({ startTime, endTime, onSave, onDiscard, 
             </Flex>
 
             <FormControl>
-                <FormLabel htmlFor="end-time">Event tags</FormLabel>
+                <FormLabel htmlFor="end-time">Tags</FormLabel>
                 <TagsEditor onChange={handleTagsChange} key={editKey} />
             </FormControl>
 
