@@ -18,6 +18,7 @@ export const Chart = (props) => {
 
     const annotations = props.annotations || []
     const events = props.events || []
+    const userProfile = PROFILE
 
     // Layout.
     // 
@@ -102,8 +103,8 @@ export const Chart = (props) => {
     const bglColorId = `bg-color-${uuidv4()}`
 
     const inRangeShapeDescription = {
-        start: PROFILE.targetRange.bgTargetBottom / 18.,
-        end: PROFILE.targetRange.bgTargetTop / 18.
+        start: userProfile.targetRange.bgTargetBottom / 18.,
+        end: userProfile.targetRange.bgTargetTop / 18.
     }
 
     const svgRef = el => {
@@ -196,10 +197,10 @@ export const Chart = (props) => {
                         function getStopColor(d) {
                             return intervalSearch([
                                 [0, 'red'],
-                                [3.9, 'orange'],
-                                [5, 'green'],
-                                [10, 'orange'],
-                                [13, 'red']
+                                [userProfile.targetRange.bgLow / 18., 'orange'],
+                                [userProfile.targetRange.bgTargetBottom / 18., 'green'],
+                                [userProfile.targetRange.bgTargetTop / 18., 'orange'],
+                                [userProfile.targetRange.bgHigh / 18., 'red']
                             ], d.sgv)
                         }
                         return <stop key={i} offset={x(d.date) / width} stopColor={getStopColor(d)} />
