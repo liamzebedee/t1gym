@@ -142,7 +142,7 @@ export const Annotator = (props) => {
                             <TableHead>
                                 <TableRow>
                                     <TableHeader width={80}>Time</TableHeader>
-                                    <TableHeader width={200}>Tags</TableHeader>
+                                    <TableHeader width={80}>Tags</TableHeader>
                                     <TableHeader>Notes</TableHeader>
                                 </TableRow>
                             </TableHead>
@@ -165,7 +165,7 @@ export const Annotator = (props) => {
                     
                     <Box p={2} shadow="xs" borderWidth="1px">
                         {function(){
-                            if(brush == null) return <b>Drag to annotate</b>
+                            if(brush == null) return <b>Highlight your chart to add notes</b>
                             else {
                                 return <>
                                     <Heading as="h3" size="md">
