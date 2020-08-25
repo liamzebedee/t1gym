@@ -168,11 +168,10 @@ export const Annotator = (props) => {
                             if(brush == null) return <b>Highlight your chart to add notes</b>
                             else {
                                 return <>
-                                    <Heading as="h3" size="md">
+                                    <Heading as="h3" size="md" pb={2}>
                                         New annotation
                                     </Heading>
 
-                                    {/* {formatPlotlyDate(brush[0])} to {formatPlotlyDate(brush[1])} */}
                                     <AnnotationInputControl 
                                         stats={stats}
                                         startTime={brush[0]} 
