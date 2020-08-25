@@ -4,6 +4,7 @@ import { AnnotatorContainer } from "../Annotator/Container"
 import { useState, useEffect } from "react"
 import queryString from 'query-string'
 import { tz } from "../../misc/wrappers"
+import { Icon, Text } from "@chakra-ui/core";
 
 export const Analyse = () => {
     const [bgs, setBgs] = useState(null)
@@ -22,7 +23,10 @@ export const Analyse = () => {
     }, [])
 
     return <Box p={5} boxShadow="lg">
-        <Heading size="xl" pb={5}>Past 2 weeks.</Heading>
+        <Text fontSize="xl" pb={5}>
+            <b>Label and understand your patterns</b>. 
+            Start by highlighting directly on your chart, and you can begin to add notes and build a richer understanding of your day.
+        </Text>
         
         {loadingBGData && <>
             <span><CircularProgress isIndeterminate size="sm" color="green"/> Loading BG's from Nightscout...</span>
