@@ -68,14 +68,7 @@ const Blip = ({ pgs }) => {
     </svg>
 }
 
-const PROFILE = {
-    targetRange: {
-        bgHigh: 260, 
-        bgTargetTop: 180, 
-        bgTargetBottom: 80, 
-        bgLow: 55
-    }
-}
+import { PROFILE } from '../../misc/constants'
 
 export const ReportCard = ({ userProfile = PROFILE }) => {
     let [data, setData] = useState(null)

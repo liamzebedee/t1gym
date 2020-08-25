@@ -10,6 +10,8 @@ import styles from './styles.module.css'
 import { functions, MINUTE, compose, SECOND } from "../../model";
 
 
+import { PROFILE } from '../../misc/constants'
+
 export const Chart = (props) => {
     let onEndBrush = props.onEndBrush || function () { }
     const data = _.sortBy(props.data, 'date')
@@ -100,10 +102,9 @@ export const Chart = (props) => {
     const bglColorId = `bg-color-${uuidv4()}`
 
     const inRangeShapeDescription = {
-        start: 5,
-        end: 10
+        start: PROFILE.targetRange.bgTargetBottom / 18.,
+        end: PROFILE.targetRange.bgTargetTop / 18.
     }
-
 
     const svgRef = el => {
         if (!el) return
