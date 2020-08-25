@@ -84,7 +84,7 @@ export const Annotator = (props) => {
             // BG stats.
             const startBG = annotationData[0].sgv
             const endBG = _.last(annotationData).sgv
-            const deltaBG = endBG - startBG
+            const deltaBG = startBG - endBG
 
             // Insulin/carb stats.
             const treatmentsWithinRange = treatments.filter(d => {

@@ -85,7 +85,7 @@ export const AnnotationInputControl = ({ startTime, endTime, onSave, onDiscard, 
 
                 <span style={{ width: 150 }}><b>BGL</b>: {(stats.endBG || 0).toFixed(1)}mmol</span>
                 <Box paddingRight="5"></Box>
-                <span  style={{ width: 150 }}><b>Δ BGL</b>: {(stats.deltaBG || 0) > 1 ? '+' : ''}{(stats.deltaBG || 0).toFixed(1)}mmol</span>
+                <span style={{ width: 150 }}><b>Δ BGL</b><br/> {(stats.deltaBG || 0) > 0 ? '+' : ''}{(stats.deltaBG || 0).toFixed(1)}mmol</span>
             </Flex>
 
             <Flex flexDirection="row">
