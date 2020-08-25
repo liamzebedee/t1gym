@@ -3,6 +3,7 @@ import { Stack, FormControl, FormLabel, Textarea, Button, Heading, Flex, Box } f
 import DateTime from 'react-datetime'
 import { TagsEditor } from '../TagsEditor'
 import { useEffect } from "react"
+import styles from './styles.module.css'
 
 function useEditKey() {
     const [editKey, setEditKey] = useState(0)
@@ -88,9 +89,13 @@ export const AnnotationInputControl = ({ startTime, endTime, onSave, onDiscard, 
             </Flex>
 
             <Flex flexDirection="row">
-                <span style={{ width: 150 }}><b>Total Carbs</b>: {(stats.totalCarbs || 0).toFixed(0)}g</span>
+                <span style={{ width: 150 }}>
+                    <b>Total Carbs</b>: <span className={styles.carbs}>{(stats.totalCarbs || 0).toFixed(0)}g</span>
+                </span>
                 <Box paddingRight="5"></Box>
-                <span  style={{ width: 150 }}><b>Total insulin</b>: {(stats.totalInsulin || 0).toFixed(1)}U</span>
+                <span style={{ width: 150 }}>
+                    <b>Total insulin</b>: <span className={styles.insulin}>{(stats.totalInsulin || 0).toFixed(1)}U</span>
+                </span>
             </Flex>
 
             <FormControl>
