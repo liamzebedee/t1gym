@@ -264,7 +264,7 @@ export const Chart = (props) => {
                             return null
                     }
                     
-                    const date = new Date(event.timestamp)
+                    const date = new Date(event.created_at)
                     const u = yIdx(data, date)
                     const u2 = data[u-1]
                     
@@ -309,7 +309,7 @@ export const Chart = (props) => {
 
                     if(!carbs) return
 
-                    const date = new Date(event.timestamp)
+                    const date = new Date(event.created_at)
                     if(date < extent[0]) return // TODO(liamz): quick hack to work around out-of-date-range events.
                     const CARB_SCALE_FACTOR = 3
                     const height = carbs * CARB_SCALE_FACTOR
@@ -337,7 +337,7 @@ export const Chart = (props) => {
 
                     if(!insulin) return
 
-                    const date = new Date(event.timestamp)
+                    const date = new Date(event.created_at)
                     if(date < extent[0]) return // TODO(liamz): quick hack to work around out-of-date-range events.
                     const INSULIN_SCALE_FACTOR = 15
                     const height = insulin * INSULIN_SCALE_FACTOR
@@ -413,7 +413,7 @@ export const TempBasalChart = ({ height = 200, width, extent, events }) => {
                 rate
             } = event
 
-            const date = new Date(event.timestamp)
+            const date = new Date(event.created_at)
             const expires = new Date(date.getTime() + (duration * MINUTE))
             return { date, expires, duration, rate }
         })

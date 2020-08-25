@@ -90,7 +90,7 @@ export const Annotator = (props) => {
             const treatmentsWithinRange = treatments.filter(d => {
                 // TODO: Treatments use the `timestamp` field, but we use Unix timestamps throughout
                 // the codebase. Would be wise to be consistent.
-                const date = +new Date(d.timestamp)
+                const date = +new Date(d.created_at)
                 return (date >= startTime) && (date <= endTime)
             })
             const totalCarbs = treatmentsWithinRange
