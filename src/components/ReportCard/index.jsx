@@ -86,7 +86,16 @@ const Blip = ({ pgs }) => {
     </svg>
 }
 
-export const ReportCard = ({ }) => {
+const PROFILE = {
+    targetRange: {
+        bgHigh: 260, 
+        bgTargetTop: 180, 
+        bgTargetBottom: 80, 
+        bgLow: 55
+    }
+}
+
+export const ReportCard = ({ userProfile = PROFILE }) => {
     let [data, setData] = useState(null)
     let [statistics, setStatistics] = useState({
         PGS: null,
@@ -99,7 +108,7 @@ export const ReportCard = ({ }) => {
         }
         const longitudalData = await fetch(`/api/bgs/longitudal?${queryString.stringify(params)}`).then(res => res.json())
 
-        const statistics = calcStats(longitudalData)
+        const statistics = calcStats(longitudalData, userProfile)
 
         let data = []
         let days = dataToDayByDay(longitudalData)

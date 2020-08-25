@@ -1,13 +1,8 @@
 import * as ss from 'simple-statistics'
 
-export function calcStats(sgvData) {
+export function calcStats(sgvData, userProfile) {
   let displayUnits = ''
-  let clientOpts = {
-      bgHigh: 260
-  , bgTargetTop: 180
-  , bgTargetBottom: 80
-  , bgLow: 55
-  }
+  let clientOpts = userProfile.targetRange
 
   let options = {}
   options.targetLow = clientOpts.bgTargetBottom
