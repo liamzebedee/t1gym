@@ -15,45 +15,27 @@ import { useHoverPickSelector } from '../../misc/hooks';
 import { tz } from '../../misc/wrappers';
 import queryString from 'query-string'
 
+// Buckets longitudalData into buckets lineated by day.
 function dataToDayByDay(longitudalData) {
-    let data = _.sortBy(longitudalData, ['date'])
-    let day = DateTime
-        .fromJSDate(new Date(data[0].date))
-        .set({
-            hour: 0,
-            minute: 0,
-            millisecond: 0
-        })
-        .plus({ day: 1 })
+    let dataSortedByDate = _.sortBy(longitudalData, ['date'])
 
-    let dayBuf = []
-    let days = []
-
-    data.forEach(el => {
-        if (el.date > day.toMillis()) {
-            // Advance day.
-            day = day.plus({ day: 1 })
-            days = [...days, dayBuf.slice()]
-            dayBuf = []
-        }
-
-        dayBuf = [...dayBuf, el]
+    const buckets = _.groupBy(dataSortedByDate, el => {
+        const day = DateTime.fromMillis(el.date)
+            .set({
+                hour: 0,
+                minute: 0,
+                second: 0,
+                millisecond: 0,
+            })
+        return day.toString()
     })
-    days = [...days, dayBuf]
 
-    return days
-}
-
-// Return the index of the first Monday in `data`.
-// Using this we can slice the data set, showing 
-// a fixed layout of 5 weekdays and a 2 day weekend 
-// (nous sommes en Australie, pas France).
-function firstMonday(data) {
-    for(let i = 0; i < data.length; i++) {
-        const date = DateTime.fromJSDate(new Date(data[i].date))
-        if(date.weekday == 1) return i
-    }
-    return null
+    return Object.entries(buckets).map(([ day, data ]) => {
+        return {
+            day,
+            data
+        }
+    })
 }
 
 // Rescale the PGS value into
@@ -113,15 +95,11 @@ export const ReportCard = ({ userProfile = PROFILE }) => {
         let data = []
         let days = dataToDayByDay(longitudalData)
         data = 
-            days.map(day => {
-                const stats = calcStats(day)
-                return {
-                    data: day,
-                    date: new Date(day[0].date),
-                    stats,
-                }
+            days.map(({ day, data }) => {
+                const stats = calcStats(data, userProfile)
+                return { day, data, stats }
             })
-        data = data.slice(firstMonday(data))
+            
         setData(data)
                 
         setStatistics(statistics)
@@ -131,11 +109,7 @@ export const ReportCard = ({ userProfile = PROFILE }) => {
         load()
     }, [])
 
-
-
     const margin = {
-        // top: 40 + 30,
-        // left: 40 + 10,
         top: 0,
         left: 0
     }
@@ -143,15 +117,46 @@ export const ReportCard = ({ userProfile = PROFILE }) => {
     const ROW_WIDTH = 130
     const ROW_HEIGHT = 130
 
-    const days = 5 * 7
+    const NUM_DAYS_TO_DISPLAY = 5 * 7
     const dimensions = {
         width: margin.left + ROW_WIDTH * 7,
-        height: margin.top + ROW_HEIGHT * (days / 7)
+        height: margin.top + ROW_HEIGHT * (NUM_DAYS_TO_DISPLAY / 7)
     }
 
     const [previewedDay, selectedDay, hoveredDay, onHoverDay, onSelectDay] = useHoverPickSelector()
 
+
+    const dateRange = {
+        fromDate: null,
+        toDate: null
+    }
+    const today = DateTime
+        .local()
+        .set({
+            hour: 0,
+            minute: 0,
+            second: 0,
+            millisecond: 0
+        })
+    
+    // We show a fixed-width layout, with weeks beginning on Monday and ending on Sunday.
+    // fromDate should thus be a Monday, and toDate a Sunday.
+    // We count backwards from toDate.
+    const endOfThisWeek = today.plus({ days: 7 - today.weekday })
+    dateRange.fromDate = endOfThisWeek.minus({ days: NUM_DAYS_TO_DISPLAY })
+    dateRange.toDate = endOfThisWeek    
+
+    function renderPreview() {
+        if(previewedDay !== null) {
+            const day = _.find(data, { day: previewedDay })
+            if(!day) return <Chart data={[]} />
+            return <Chart data={convertData(day.data)} />
+        }
+    }
+
     return <>
+        <p>Your target range is {(userProfile.targetRange.bgTargetBottom / 18.).toFixed(1)} - {(userProfile.targetRange.bgTargetTop / 18.).toFixed(1)} mmol/L.</p>
+        <br/>
         <Flex direction="row">
             <Stack isInline={true} spacing={30}>
                 {/* Stats. */}
@@ -199,15 +204,18 @@ export const ReportCard = ({ userProfile = PROFILE }) => {
                 viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
                 >
                     <g transform={`translate(${margin.left}, ${margin.top})`}>
-                        {data && data.map((datum, i) => {
-                            const date = DateTime.fromJSDate(datum.date)
+                        {_.range(NUM_DAYS_TO_DISPLAY).map((dayIdx, i, daysToDisplay) => {
+                            const date = dateRange.fromDate.plus({ days: dayIdx+1 })
+                            const dateKey = date.toString()
+                            const datum = _.find(data, { day: dateKey })
+
                             const weekend = date.weekday > 5
 
                             const beginsNewMonth = date.get('day') === 1 || i === 0
                             let dateStr
                             if (beginsNewMonth) {
                                 dateStr = <tspan font-weight="bold">{date.toFormat(`MMM d`)}</tspan>
-                            } else if (i === data.length - 1) {
+                            } else if (date.equals(today)) {
                                 dateStr = 'Today'
                             } else {
                                 dateStr = date.toFormat(`d`)
@@ -215,23 +223,29 @@ export const ReportCard = ({ userProfile = PROFILE }) => {
 
                             // Show PGS only if the day contained data.
                             let pgs
-                            if(datum.stats) {
+                            if(datum && datum.stats) {
                                 const { PGS } = datum.stats
-                                pgs = <g transform={`translate(65,80)`}>
+                                pgs = <g 
+                                    transform={`translate(65,80)`}
+                                    >
                                     <circle r={40} cx={0} cy={0} fill={color(PGS)} />
                                     <text textAnchor="middle" class={styles.pgsLabel} dy=".3em">{PGS.toFixed(0)}</text>
+                                </g>
+                            } else {
+                                pgs = <g transform={`translate(65,80)`}>
+                                    <circle r={40} cx={0} cy={0} fill={'#8080802e'} />
+                                    <text textAnchor="middle" class={styles.pgsLabel} dy=".3em"></text>
                                 </g>
                             }
 
                             return <g key={i}
                                 transform={`translate(${ROW_WIDTH * (i % 7)}, ${ROW_HEIGHT * Math.floor(i / 7)} )`}
-                                onMouseEnter={() => onHoverDay(i)}
-                                onMouseLeave={() => onHoverDay(null)}
-                                onClick={() => onSelectDay(i)}
-                                className={`${styles.day} ${i === selectedDay && styles.active}`}
+                                className={`${styles.day} ${dateKey === selectedDay && styles.active}`}
                                 width={ROW_WIDTH} height={ROW_HEIGHT}
+                                onMouseEnter={() => onHoverDay(dateKey)}
+                                onMouseLeave={() => onHoverDay(null)}
+                                onClick={() => onSelectDay(dateKey)}
                             >
-
                                 <rect width={ROW_WIDTH} height={ROW_HEIGHT} className={weekend && styles.weekend}>
                                 </rect>
                                 
@@ -244,11 +258,10 @@ export const ReportCard = ({ userProfile = PROFILE }) => {
                         })}
                     </g>
                 </svg>
-                
             </Flex>
 
             <Flex direction="column" flex="1">
-                {(previewedDay !== null) && <Chart data={convertData(data[previewedDay].data)} />}
+                {renderPreview()}
             </Flex>
         </Flex>
     </>
