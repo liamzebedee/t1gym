@@ -29,7 +29,7 @@ export const App = () => {
             <Heading pt="5" pb="5">
                 <img alt="Type One Gym" className={styles.logo} src="/images/logo.png"/>
             </Heading>
-            <Tabs variant="soft-rounded" variantColor="green">
+            <Tabs variantColor="green">
                 <TabList>
                     <Tab>Overview</Tab>
                     {process.env.NEXT_PUBLIC_AB_LOGBOOK && 
