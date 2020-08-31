@@ -4,7 +4,6 @@ import { AppLoadingOverlay } from "../AppLoadingOverlay"
 import { useEffect } from "react"
 import { initialiseFirebase } from "../../misc/wrappers"
 
-
 export const AppWrapper = ({ children }) => {
     const [loading, setLoading] = useState(true)
     
@@ -19,11 +18,8 @@ export const AppWrapper = ({ children }) => {
     
     return <ThemeProvider>
         <CSSReset/>
-        {
-            loading 
-            ? <AppLoadingOverlay/>
-            : children
-        }
+        <AppLoadingOverlay show={loading}/>
+        { !loading && children }
     </ThemeProvider>
 }
 
