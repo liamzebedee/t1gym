@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import * as _ from 'lodash'
 import { DateTime } from 'luxon'
 import { getStartOfDayForTime } from '../../pages/helpers';
-import { AnnotationInputControl } from '../AnnotationInputControl';
+import { NewAnnotationControl } from '../NewAnnotationControl';
 import { Chart } from "../Chart";
 import styles from './styles.module.css'
 import { Table, TableRow, TableCell, TableHead, TableHeader, TableBody } from "../Table";
@@ -172,7 +172,7 @@ export const Annotator = (props) => {
                                         New annotation
                                     </Heading>
 
-                                    <AnnotationInputControl 
+                                    <NewAnnotationControl 
                                         stats={stats}
                                         startTime={brush[0]} 
                                         endTime={brush[1]}
