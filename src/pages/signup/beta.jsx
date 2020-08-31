@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { StatGroup, Stat, StatLabel, StatNumber, StatHelpText, StatArrow, CircularProgress, Stack, Flex, Heading, Text, Box, ThemeProvider, CSSReset, Button } from '@chakra-ui/core';
 
 import { usePromiseLoadingState, usePromiseLoadingStateWithError } from '../helpers'
+import { AppWrapper } from "../../components/AppWrapper";
 
 async function _authenticate() {
     // The invite code is defined by the `code` URL parameter.
@@ -57,8 +58,7 @@ const SignUp = () => {
 }
 
 export default () => {
-    return <ThemeProvider>
-        <CSSReset />
+    return <AppWrapper>
         <SignUp/>
-    </ThemeProvider>
+    </AppWrapper>
 }
