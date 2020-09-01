@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import * as _ from 'lodash'
 import { DateTime } from 'luxon'
 import { getStartOfDayForTime } from '../../pages/helpers';
-import { AnnotationInputControl } from '../AnnotationInputControl';
+import { NewAnnotationControl } from '../NewAnnotationControl';
 import { Chart } from "../Chart";
 import styles from './styles.module.css'
 import { Table, TableRow, TableCell, TableHead, TableHeader, TableBody } from "../Table";
@@ -71,12 +71,16 @@ export const Annotator = (props) => {
             return
         }
         
-        const [startTime, endTime] = coords
+        const [startTime, endTime] = _.orderBy(coords, 'asc')
 
         // Get glucose range and calculate stats.
-        const annotationData = data.filter(d => {
-            return (d.date >= startTime) && (d.date <= endTime)
-        })
+        // TODO: document assumptions of data's ordering.
+        const annotationData = _.sortBy(
+            data.filter(d => {
+                return (d.date >= startTime) && (d.date <= endTime)
+            }),
+            'date'
+        )
 
         if(annotationData.length) {
             // TODO(liamz): I don't exactly know what's going on here.
@@ -172,7 +176,7 @@ export const Annotator = (props) => {
                                         New annotation
                                     </Heading>
 
-                                    <AnnotationInputControl 
+                                    <NewAnnotationControl 
                                         stats={stats}
                                         startTime={brush[0]} 
                                         endTime={brush[1]}
