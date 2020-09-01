@@ -73,6 +73,3 @@
     animation-direction: alternate;
     animation-name: pulsating-skeleton2;
 }
-
-
-.css-9hgyva{border-color:#EDF2F7 !important;box-shadow:none !important;opacity:0.7;background:#EDF2F7;background-clip:padding-box !important;cursor:default;color:transparent !important;-webkit-animation:0.8s linear infinite alternate animation-ao00sx;animation:0.8s linear infinite alternate animation-ao00sx;pointer-events:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;}.css-9hgyva::before,.css-9hgyva::after,.css-9hgyva *{visibility:hidden !important;}@-webkit-keyframes animation-ao00sx{from{border-color:#EDF2F7;background:#EDF2F7;}to{border-color:#A0AEC0;background:#A0AEC0;}}@keyframes animation-ao00sx{from{border-color:#EDF2F7;background:#EDF2F7;}to{border-color:#A0AEC0;background:#A0AEC0;}}
