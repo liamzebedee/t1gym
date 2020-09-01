@@ -31,13 +31,16 @@ export async function initialiseFirebase() {
     }
   }
   firebase.analytics()
-  
-  await authenticateFirebase()
 }
 
-async function authenticateFirebase() {
+export async function authenticateFirebase() {
     return new Promise((res, rej) => {
         const auth = firebase.auth()
+        
+        setTimeout(() => {
+          rej(new Error("User authentication timed out"))
+        }, 5000)
+
         auth.onAuthStateChanged(async function (user) {
             if (user) {
                 // For later calls to the backend, we use the `token` as a session cookie.

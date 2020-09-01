@@ -58,7 +58,7 @@ const SignUp = () => {
 }
 
 export default () => {
-    return <AppWrapper>
+    return <AppWrapper authenticateUser={false}>
         <SignUp/>
     </AppWrapper>
 }
