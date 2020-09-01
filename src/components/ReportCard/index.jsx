@@ -135,6 +135,7 @@ export const ReportCard = ({ userProfile = PROFILE }) => {
             </div>} */}
 
             <ProgressCalendar   
+                loading={data === null}
                 {...{
                     data, previewedDay, selectedDay, hoveredDay, onHoverDay, onSelectDay
                 }}/>

@@ -16,7 +16,7 @@ import queryString from 'query-string'
 import React from 'react';
 import { color } from './helpers';
 
-export const ProgressCalendar = ({ data, previewedDay, selectedDay, hoveredDay, onHoverDay, onSelectDay }) => {
+export const ProgressCalendar = ({ loading, data, previewedDay, selectedDay, hoveredDay, onHoverDay, onSelectDay }) => {
     const margin = {
         top: 0,
         left: 0
@@ -30,8 +30,6 @@ export const ProgressCalendar = ({ data, previewedDay, selectedDay, hoveredDay, 
         width: margin.left + ROW_WIDTH * 7,
         height: margin.top + ROW_HEIGHT * (NUM_DAYS_TO_DISPLAY / 7)
     }
-
-
 
     const dateRange = {
         fromDate: null,
@@ -54,7 +52,7 @@ export const ProgressCalendar = ({ data, previewedDay, selectedDay, hoveredDay, 
     dateRange.toDate = endOfThisWeek
     
     return <svg 
-        className={styles.reportCard} 
+        className={`${styles.reportCard} ${loading && styles.loading}`} 
         viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}>
 
         <g transform={`translate(${margin.left}, ${margin.top})`}>

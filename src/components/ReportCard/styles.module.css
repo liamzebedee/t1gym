@@ -44,3 +44,35 @@
 .dateLabel {
     stroke: #afafaf;
 }
+
+@keyframes pulsating-skeleton2 {
+    from {
+        /* fill-opacity: 0.5; */
+        fill: #EDF2F7;
+        border-color:#EDF2F7
+    }
+    to {
+        /* fill-opacity: 0.9; */
+        fill: #A0AEC0;
+        border-color:#A0AEC0
+    }
+}
+
+.loading g > circle {
+    /* 
+     * styled-components fails to generate the one-line syntax [1] for the animation below.
+     *     animation: 800ms linear 0ms infinite alternate none pulsating-skeleton2;     <---
+     * As we are using CSS modules, it generates a local scope for the animation name.
+     * Though when using the one-line syntax, it fails to interpolate the name, instead
+     * leaving it as :local(pulsating-skeleton2).
+     */
+    animation-duration: 800ms;
+    animation-timing-function: linear;
+    animation-play-state: running;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+    animation-name: pulsating-skeleton2;
+}
+
+
+.css-9hgyva{border-color:#EDF2F7 !important;box-shadow:none !important;opacity:0.7;background:#EDF2F7;background-clip:padding-box !important;cursor:default;color:transparent !important;-webkit-animation:0.8s linear infinite alternate animation-ao00sx;animation:0.8s linear infinite alternate animation-ao00sx;pointer-events:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;}.css-9hgyva::before,.css-9hgyva::after,.css-9hgyva *{visibility:hidden !important;}@-webkit-keyframes animation-ao00sx{from{border-color:#EDF2F7;background:#EDF2F7;}to{border-color:#A0AEC0;background:#A0AEC0;}}@keyframes animation-ao00sx{from{border-color:#EDF2F7;background:#EDF2F7;}to{border-color:#A0AEC0;background:#A0AEC0;}}
