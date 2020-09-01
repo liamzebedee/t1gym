@@ -71,12 +71,16 @@ export const Annotator = (props) => {
             return
         }
         
-        const [startTime, endTime] = coords
+        const [startTime, endTime] = _.orderBy(coords, 'asc')
 
         // Get glucose range and calculate stats.
-        const annotationData = data.filter(d => {
-            return (d.date >= startTime) && (d.date <= endTime)
-        })
+        // TODO: document assumptions of data's ordering.
+        const annotationData = _.sortBy(
+            data.filter(d => {
+                return (d.date >= startTime) && (d.date <= endTime)
+            }),
+            'date'
+        )
 
         if(annotationData.length) {
             // TODO(liamz): I don't exactly know what's going on here.
