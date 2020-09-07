@@ -8,6 +8,7 @@ import { Icon, Text } from "@chakra-ui/core";
 
 export const Analyse = () => {
     const [bgs, setBgs] = useState(null)
+    const [profiles, setProfiles] = useState(null)
     const [getBGData, loadingBGData] = usePromiseLoadingState(getBGData_)
 
     async function getBGData_() {
@@ -15,6 +16,8 @@ export const Analyse = () => {
             tz
         }
         const data = await fetch(`/api/bgs/daily?${queryString.stringify(params)}`).then(res => res.json())
+        const profiles = await fetch(`/api/profiles?${queryString.stringify(params)}`).then(res => res.json())
+        setProfiles(profiles)
         setBgs(data)
     }
 
@@ -35,6 +38,7 @@ export const Analyse = () => {
         {bgs && bgs.map((bgset, i) => {
             return <div key={i}>
                 <AnnotatorContainer 
+                    profiles={profiles}
                     data={convertData(bgset.data)}
                     treatments={bgset.treatments}/>
             </div>
