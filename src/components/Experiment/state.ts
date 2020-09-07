@@ -1,5 +1,5 @@
 // import create from 'zustand'
-export {} 
+export {}
 // const [useStore] = create(set => ({
 //     annotations: [],
 //     fromTo: [],
@@ -7,7 +7,7 @@ export {}
 //     glucoseFeed: latestGlucoseFeed,
 //     observed: [],
 //     predicted: [],
-    
+
 //     eventsText: "",
 
 //     // Body metabolism model.
@@ -31,5 +31,4 @@ export {}
 //     // Experiments.
 //     experiments: [],
 
-    
 // }))

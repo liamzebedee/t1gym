@@ -9,13 +9,15 @@
     "start": "next start",
     "ts:watch": "tsc -W",
     "storybook": "start-storybook -p 6006",
-    "build-storybook": "build-storybook"
+    "build-storybook": "build-storybook",
+    "lint": "eslint --fix ."
   },
   "dependencies": {
     "@chakra-ui/core": "^0.8.0",
     "@emotion/core": "^10.0.28",
     "@emotion/styled": "^10.0.27",
     "@storybook/cli": "^5.3.19",
+    "@typescript-eslint/eslint-plugin": "^3.10.1",
     "chart.js": "^2.9.3",
     "chrono-node": "^1.4.6",
     "cookie": "^0.4.1",
@@ -23,6 +25,7 @@
     "dexie": "^3.0.1",
     "dexie-observable": "^1.0.0-beta.7",
     "emotion-theming": "^10.0.27",
+    "eslint-config-airbnb": "^18.2.0",
     "esm": "^3.2.25",
     "everpolate": "^0.0.3",
     "firebase": "^7.17.1",
@@ -53,7 +56,10 @@
     "@types/node": "^13.13.5",
     "@types/react": "^16.9.34",
     "babel-loader": "^8.1.0",
+    "eslint": "^7.8.0",
+    "eslint-plugin-react": "^7.20.6",
     "plotly.js": "^1.54.1",
+    "prettier": "^2.1.1",
     "react-plotly.js": "^2.4.0",
     "ts-loader": "^8.0.1"
   },

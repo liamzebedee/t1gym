@@ -1,215 +1,220 @@
+import * as d3 from "d3"
+import React, { useEffect, useRef, useState } from "react"
+import { intervalSearch } from "../../pages/helpers"
 
-import * as d3 from "d3";
-import React, { useEffect, useRef, useState } from 'react';
-import { intervalSearch } from "../../pages/helpers";
+import { Duration, DateTime } from "luxon"
 
-import { Duration, DateTime } from 'luxon'
+import { v4 as uuidv4 } from "uuid"
+import styles from "./styles.module.css"
+import { functions, MINUTE, compose, SECOND } from "../../model"
 
-import { v4 as uuidv4 } from 'uuid';
-import styles from './styles.module.css'
-import { functions, MINUTE, compose, SECOND } from "../../model";
-
-
-import { PROFILE } from '../../misc/constants'
+import { PROFILE } from "../../misc/constants"
 
 export const Chart = (props) => {
-    let onEndBrush = props.onEndBrush || function () { }
-    const data = _.sortBy(props.data, 'date')
+  let onEndBrush = props.onEndBrush || function () {}
+  const data = _.sortBy(props.data, "date")
 
-    const annotations = props.annotations || []
-    const events = props.events || []
-    const userProfile = PROFILE
+  const annotations = props.annotations || []
+  const events = props.events || []
+  const userProfile = PROFILE
 
-    // Layout.
-    // 
-    
-    const tempBasalArea = {
-        height: 200,
-        marginTop: 50
+  // Layout.
+  //
+
+  const tempBasalArea = {
+    height: 200,
+    marginTop: 50,
+  }
+
+  let margin = { top: 1, right: 30, bottom: 30, left: 60 }
+
+  let width = 1200
+  let height = 400
+
+  if (!props.showTempBasalChart) {
+    height += tempBasalArea.height
+  }
+
+  //
+  // x and y curves.
+  //
+
+  // Domain is supposed to be a full day by default.
+  let extent = d3.extent(data, function (d) {
+    return d.date
+  })
+  function calcExtent(extent, dynamicExtent) {
+    if (dynamicExtent) return extent
+    let start = DateTime.fromJSDate(new Date(extent[0])).set({
+      hour: 0,
+      minute: 0,
+    })
+    let end = start.plus({ days: 1 })
+    return [start.toMillis(), end.toMillis()]
+  }
+
+  const x = d3
+    .scaleTime()
+    .domain(calcExtent(extent, props.dynamicExtent))
+    .range([0, width])
+    .clamp(true)
+
+  const y = d3.scaleLinear().domain([0, 23]).range([height, 0])
+
+  const axisRef = (el) => {
+    el && d3.select(el).call(d3.axisLeft(y))
+  }
+
+  let flip = false
+  const axisRef2 = (el) => {
+    let yAxis = d3.axisBottom(x)
+    if (!props.dynamicExtent) {
+      yAxis = yAxis.ticks(d3.timeMinute.every(120)).tickFormat((x) => {
+        flip = !flip
+        if (flip) return ""
+        const timeStr = d3.timeFormat("%I %p")(x)
+        if (timeStr[0] === "0") return timeStr.slice(1)
+        return timeStr
+      })
     }
+    d3.select(el).call(yAxis)
+  }
 
-    let margin = { top: 1, right: 30, bottom: 30, left: 60 }
-    
-    let width = 1200
-    let height = 400
-    
-    if(!props.showTempBasalChart) {
-        height += tempBasalArea.height
-    }
+  const bgLine = d3
+    .line()
+    // .curve(d3.curveLinear)
+    .curve(d3.curveCatmullRomOpen)
+    .defined((d) => d.sgv != 0)
+    .x(function (d) {
+      return x(d.date)
+    })
+    .y(function (d) {
+      return y(d.sgv)
+    })
 
+  // The most ridiculously simple hack.
+  const bglColorId = `bg-color-${uuidv4()}`
 
-    // 
-    // x and y curves.
-    // 
+  const inRangeShapeDescription = {
+    start: userProfile.targetRange.bgTargetBottom / 18,
+    end: userProfile.targetRange.bgTargetTop / 18,
+  }
 
-    // Domain is supposed to be a full day by default.
-    let extent = d3.extent(data, function (d) { return d.date })
-    function calcExtent(extent, dynamicExtent) {
-        if (dynamicExtent) return extent
-        let start = DateTime.fromJSDate(new Date(extent[0])).set({
-            hour: 0,
-            minute: 0
+  const svgRef = (el) => {
+    if (!el) return
+    // Add brushing
+    d3.select(el).call(
+      d3
+        .brushX()
+        .extent([
+          [0, 0],
+          [width, height],
+        ])
+        .on("end", function () {
+          let extent = d3.event.selection
+          if (extent != null) {
+            onEndBrush(extent.map(x.invert))
+          } else {
+            onEndBrush(extent)
+          }
         })
-        let end = start.plus({ days: 1 })
-        return [
-            start.toMillis(),
-            end.toMillis()
-        ]
+    )
+  }
+
+  const yIdx = d3.bisector((d) => d.date).right
+
+  const transformedEvents = events.filter((event) => {
+    switch (event.eventType) {
+      case "Meal Bolus":
+      case "Correction Bolus":
+        return true
+      default:
+        return false
     }
+  })
 
-    const x = d3.scaleTime()
-        .domain(calcExtent(extent, props.dynamicExtent))
-        .range([0, width])
-        .clamp(true)
+  function bgY(date) {
+    const yi = yIdx(data, date)
+    if (yi === 0) return data[yi]
+    else return data[yi - 1]
+  }
 
-    const y = d3.scaleLinear()
-        .domain([0, 23])
-        .range([height, 0])
+  function generateTempBasalEntries(fromDate, toDate) {
+    let entries = []
+    let intervals = []
 
+    events
+      .filter((event) => event.eventType === "Temp Basal")
+      .map((event, i) => {
+        const { duration, rate, timestamp } = event
 
-    const axisRef = el => {
-        el && d3.select(el).call(
-            d3.axisLeft(y)
-        )
-    }
+        let date = +new Date(timestamp)
+        const from = date
+        const to = DateTime.fromJSDate(new Date(date))
+          .plus({ minutes: duration })
+          .toMillis()
 
-
-    let flip = false
-    const axisRef2 = el => {
-        let yAxis = d3.axisBottom(x)
-        if (!props.dynamicExtent) {
-            yAxis = yAxis
-                .ticks(d3.timeMinute.every(120))
-                .tickFormat(x => {
-                    flip = !flip
-                    if (flip) return ''
-                    const timeStr = d3.timeFormat("%I %p")(x)
-                    if(timeStr[0] === '0') return timeStr.slice(1)
-                    return timeStr
-                })
-        }
-        d3.select(el).call(yAxis)
-    }
-
-    const bgLine = d3.line()
-        // .curve(d3.curveLinear)
-        .curve(d3.curveCatmullRomOpen)
-        .defined(d => d.sgv != 0)
-        .x(function (d) { return x(d.date) })
-        .y(function (d) { return y(d.sgv) })
-
-
-    // The most ridiculously simple hack.
-    const bglColorId = `bg-color-${uuidv4()}`
-
-    const inRangeShapeDescription = {
-        start: userProfile.targetRange.bgTargetBottom / 18.,
-        end: userProfile.targetRange.bgTargetTop / 18.
-    }
-
-    const svgRef = el => {
-        if (!el) return
-        // Add brushing
-        d3.select(el)
-            .call(d3.brushX()
-                .extent([[0, 0], [width, height]])
-                .on("end", function () {
-                    let extent = d3.event.selection
-                    if (extent != null) {
-                        onEndBrush(extent.map(x.invert))
-                    } else {
-                        onEndBrush(extent)
-                    }
-                })
-            )
-    }
-
-
-    const yIdx = d3.bisector(d => d.date).right
-
-    const transformedEvents = events
-        .filter(event => {
-            switch(event.eventType) {
-                case 'Meal Bolus':
-                case 'Correction Bolus':
-                    return true
-                default:
-                    return false
-            }
+        intervals.push({
+          from,
+          to,
+          rate,
+          duration,
         })
+      })
+  }
 
-    function bgY(date) {
-        const yi = yIdx(data, date)
-        if(yi === 0) return data[yi]
-        else return data[yi - 1]
-    }
-
-    function generateTempBasalEntries(fromDate, toDate) {
-        let entries = []
-        let intervals = []
-
-        events
-        .filter(event => event.eventType === 'Temp Basal')
-        .map((event, i) => {
-            const {
-                duration,
-                rate,
-                timestamp
-            } = event
-            
-            let date = +new Date(timestamp)
-            const from = date
-            const to = DateTime.fromJSDate(new Date(date))
-                .plus({ minutes: duration })
-                .toMillis()
-            
-            intervals.push({
-                from,
-                to,
-                rate,
-                duration
-            })
-        })
-        
-
-    }
-        
-    return <>
-    <svg
+  return (
+    <>
+      <svg
         // width={'100%'} height={'100%'}
-        viewBox={`0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom + tempBasalArea.height + tempBasalArea.marginTop}`}
-        className={styles.chart}>
+        viewBox={`0 0 ${width + margin.left + margin.right} ${
+          height +
+          margin.top +
+          margin.bottom +
+          tempBasalArea.height +
+          tempBasalArea.marginTop
+        }`}
+        className={styles.chart}
+      >
         <g transform={`translate(${margin.left}, ${margin.top})`}>
-            {/* Axes. */}
-            <g ref={axisRef}>
-            </g>
-            <g ref={axisRef2} transform={"translate(0," + height + ")"}>
-            </g>
+          {/* Axes. */}
+          <g ref={axisRef}></g>
+          <g ref={axisRef2} transform={"translate(0," + height + ")"}></g>
 
-            <g ref={svgRef}>
-                {/* Line */}
-                <linearGradient
-                    id={bglColorId}
-                    gradientUnits="userSpaceOnUse"
-                    x1={0}
-                    x2={width}>
-                    {data.map((d, i) => {
-                        function getStopColor(d) {
-                            return intervalSearch([
-                                [0, 'red'],
-                                [userProfile.targetRange.bgLow / 18., 'orange'],
-                                [userProfile.targetRange.bgTargetBottom / 18., 'green'],
-                                [userProfile.targetRange.bgTargetTop / 18., 'orange'],
-                                [userProfile.targetRange.bgHigh / 18., 'red']
-                            ], d.sgv)
-                        }
-                        return <stop key={i} offset={x(d.date) / width} stopColor={getStopColor(d)} />
-                    })}
-                </linearGradient>
+          <g ref={svgRef}>
+            {/* Line */}
+            <linearGradient
+              id={bglColorId}
+              gradientUnits="userSpaceOnUse"
+              x1={0}
+              x2={width}
+            >
+              {data.map((d, i) => {
+                function getStopColor(d) {
+                  return intervalSearch(
+                    [
+                      [0, "red"],
+                      [userProfile.targetRange.bgLow / 18, "orange"],
+                      [userProfile.targetRange.bgTargetBottom / 18, "green"],
+                      [userProfile.targetRange.bgTargetTop / 18, "orange"],
+                      [userProfile.targetRange.bgHigh / 18, "red"],
+                    ],
+                    d.sgv
+                  )
+                }
+                return (
+                  <stop
+                    key={i}
+                    offset={x(d.date) / width}
+                    stopColor={getStopColor(d)}
+                  />
+                )
+              })}
+            </linearGradient>
 
-                {/* https://observablehq.com/@d3/line-with-missing-data */}
-                {/* Dotted line for missing/extrapolated data. */}
-                {/* <path 
+            {/* https://observablehq.com/@d3/line-with-missing-data */}
+            {/* Dotted line for missing/extrapolated data. */}
+            {/* <path 
                 d={bgLine(data.filter(bgLine.defined()))}
                 fill="none"
                 stroke="grey" 
@@ -217,31 +222,35 @@ export const Chart = (props) => {
                 strokeWidth={1}
                 /> */}
 
-                {/* Coloured BG line for real data. */}
+            {/* Coloured BG line for real data. */}
+            <path
+              // d={bgLine( data.filter(bgLine.defined()) )}
+              opacity={annotations.length ? 0.5 : 1}
+              d={bgLine(data)}
+              fill="none"
+              stroke={`url(#${bglColorId})`}
+              strokeWidth={2}
+            />
+
+            {/* Annotations. */}
+            {annotations.map((annotation) => {
+              const { startTime, endTime } = annotation
+              const annotationData = data.filter((d) => {
+                return d.date >= startTime && d.date <= endTime
+              })
+              const el = (
                 <path
-                    // d={bgLine( data.filter(bgLine.defined()) )}
-                    opacity={annotations.length ? 0.5 : 1}
-                    d={bgLine(data)}
-                    fill="none"
-                    stroke={`url(#${bglColorId})`}
-                    strokeWidth={2} />
+                  d={bgLine(annotationData)}
+                  fill="none"
+                  stroke={`url(#${bglColorId})`}
+                  strokeWidth={4}
+                />
+              )
+              return el
+            })}
 
-                {/* Annotations. */}
-                {annotations.map(annotation => {
-                    const { startTime, endTime } = annotation
-                    const annotationData = data.filter(d => {
-                        return (d.date >= startTime) && (d.date <= endTime)
-                    })
-                    const el = <path
-                        d={bgLine(annotationData)}
-                        fill="none"
-                        stroke={`url(#${bglColorId})`}
-                        strokeWidth={4} />;
-                    return el
-                })}
-
-                {/* Events. */}
-                {/* {transformedEvents.map((event, i) => {
+            {/* Events. */}
+            {/* {transformedEvents.map((event, i) => {
                     let fill
                     let text
                     let scaleFactor = 1
@@ -292,159 +301,165 @@ export const Chart = (props) => {
                     return el
                 })} */}
 
-
-                {/* 
+            {/* 
                     Treatments. 
                 */}
-                
-                {/* Carbohydrates. */}
-                {transformedEvents.map((event, i) => {
-                    let carbs
-                    switch(event.eventType) {
-                        case 'Meal Bolus':
-                            carbs = event.carbs
-                            break
-                        default:
-                            return null
-                    }
 
-                    if(!carbs) return
+            {/* Carbohydrates. */}
+            {transformedEvents.map((event, i) => {
+              let carbs
+              switch (event.eventType) {
+                case "Meal Bolus":
+                  carbs = event.carbs
+                  break
+                default:
+                  return null
+              }
 
-                    const date = new Date(event.created_at)
-                    if(date < extent[0]) return // TODO(liamz): quick hack to work around out-of-date-range events.
-                    const CARB_SCALE_FACTOR = 3
-                    const height = carbs * CARB_SCALE_FACTOR
+              if (!carbs) return
 
-                    return <g className={styles.carbsBar} transform={`translate(${x(date)}, ${y(0)})`}>
-                        <rect y={-height} height={height} width="5"></rect>
+              const date = new Date(event.created_at)
+              if (date < extent[0]) return // TODO(liamz): quick hack to work around out-of-date-range events.
+              const CARB_SCALE_FACTOR = 3
+              const height = carbs * CARB_SCALE_FACTOR
 
-                        <text y={-height - 20}>
-                            {`${carbs}g`}
-                        </text>
-                    </g>
-                })}
+              return (
+                <g
+                  className={styles.carbsBar}
+                  transform={`translate(${x(date)}, ${y(0)})`}
+                >
+                  <rect y={-height} height={height} width="5"></rect>
 
-                {/* Insulin dosages. */}
-                {transformedEvents.map((event, i) => {
-                    let insulin
-                    switch(event.eventType) {
-                        case 'Meal Bolus':
-                        case 'Correction Bolus':
-                            insulin = event.insulin
-                            break
-                        default:
-                            return null
-                    }
+                  <text y={-height - 20}>{`${carbs}g`}</text>
+                </g>
+              )
+            })}
 
-                    if(!insulin) return
+            {/* Insulin dosages. */}
+            {transformedEvents.map((event, i) => {
+              let insulin
+              switch (event.eventType) {
+                case "Meal Bolus":
+                case "Correction Bolus":
+                  insulin = event.insulin
+                  break
+                default:
+                  return null
+              }
 
-                    const date = new Date(event.created_at)
-                    if(date < extent[0]) return // TODO(liamz): quick hack to work around out-of-date-range events.
-                    const INSULIN_SCALE_FACTOR = 15
-                    const height = insulin * INSULIN_SCALE_FACTOR
+              if (!insulin) return
 
-                    return <g className={styles.insulinBar} transform={`translate(${x(date)}, ${y(0)})`}>
-                        <rect y={-height} height={height} width="5"></rect>
+              const date = new Date(event.created_at)
+              if (date < extent[0]) return // TODO(liamz): quick hack to work around out-of-date-range events.
+              const INSULIN_SCALE_FACTOR = 15
+              const height = insulin * INSULIN_SCALE_FACTOR
 
-                        <text y={-height - 20}>
-                            {`${insulin.toFixed(1)}U`}
-                        </text>
-                    </g>
-                })}
+              return (
+                <g
+                  className={styles.insulinBar}
+                  transform={`translate(${x(date)}, ${y(0)})`}
+                >
+                  <rect y={-height} height={height} width="5"></rect>
 
+                  <text y={-height - 20}>{`${insulin.toFixed(1)}U`}</text>
+                </g>
+              )
+            })}
 
-                {/* In range box. */}
-                <rect
-                    x={0}
-                    y={y(inRangeShapeDescription.end)}
-                    width={width}
-                    height={y(inRangeShapeDescription.start) - y(inRangeShapeDescription.end)}
-                    stroke='black'
-                    fill='#7fff7f30' />
-            </g>
+            {/* In range box. */}
+            <rect
+              x={0}
+              y={y(inRangeShapeDescription.end)}
+              width={width}
+              height={
+                y(inRangeShapeDescription.start) -
+                y(inRangeShapeDescription.end)
+              }
+              stroke="black"
+              fill="#7fff7f30"
+            />
+          </g>
         </g>
-        
-        {props.showTempBasalChart &&
-        <g transform={`translate(${margin.left}, ${margin.top + height + tempBasalArea.marginTop})`}>
+
+        {props.showTempBasalChart && (
+          <g
+            transform={`translate(${margin.left}, ${
+              margin.top + height + tempBasalArea.marginTop
+            })`}
+          >
             <TempBasalChart
-                height={tempBasalArea.height}
-                width={width}
-                extent={calcExtent(extent)}
-                events={events}
-                />
-        </g> }
-    </svg>
+              height={tempBasalArea.height}
+              width={width}
+              extent={calcExtent(extent)}
+              events={events}
+            />
+          </g>
+        )}
+      </svg>
     </>
+  )
 }
 
 export const TempBasalChart = ({ height = 200, width, extent, events }) => {
-    const x = d3.scaleTime()
-        .domain(extent)
-        .range([0, width])
-        // .clamp(true)
+  const x = d3.scaleTime().domain(extent).range([0, width])
+  // .clamp(true)
 
-    const MAX_TEMP_BASAL_UNITS = 6
-    const y = d3.scaleLinear()
-        .domain([0, MAX_TEMP_BASAL_UNITS])
-        .range([height, 0])
-        // We clamp the range, as I've noticed Loop has erroneously recorded
-        // a temp basal much above the user-defined safety limits. The basal was
-        // 35U for 2mins or so. Clamping is a simple sanity check for this
-        // behaviour, as it is usually replaced by a reasonable temp.
-        .clamp(true)
+  const MAX_TEMP_BASAL_UNITS = 6
+  const y = d3
+    .scaleLinear()
+    .domain([0, MAX_TEMP_BASAL_UNITS])
+    .range([height, 0])
+    // We clamp the range, as I've noticed Loop has erroneously recorded
+    // a temp basal much above the user-defined safety limits. The basal was
+    // 35U for 2mins or so. Clamping is a simple sanity check for this
+    // behaviour, as it is usually replaced by a reasonable temp.
+    .clamp(true)
 
+  const xAxisRef = (el) => {
+    el && d3.select(el).call(d3.axisLeft(y))
+  }
 
-    const xAxisRef = el => {
-        el && d3.select(el).call(
-            d3.axisLeft(y)
-        )
-    }
+  let flip = false
+  const yAxisRef = (el) => {
+    let yAxis = d3.axisBottom(x).ticks(5)
+    d3.select(el).call(yAxis)
+  }
 
-    let flip = false
-    const yAxisRef = el => {
-        let yAxis = d3.axisBottom(x).ticks(5)
-        d3.select(el).call(yAxis)
-    }
+  const data = events
+    .filter((event) => event.eventType === "Temp Basal")
+    .map((event, i) => {
+      const { duration, rate } = event
 
-    const data = events
-        .filter(event => event.eventType === 'Temp Basal')
-        .map((event, i) => {
-            const {
-                duration,
-                rate
-            } = event
+      const date = new Date(event.created_at)
+      const expires = new Date(date.getTime() + duration * MINUTE)
+      return { date, expires, duration, rate }
+    })
+  // .filter(d => d.duration > 6)
 
-            const date = new Date(event.created_at)
-            const expires = new Date(date.getTime() + (duration * MINUTE))
-            return { date, expires, duration, rate }
-        })
-        // .filter(d => d.duration > 6)
-    
+  const area = d3
+    .area()
+    .x((d) => x(d.date))
+    .x0((d) => x(d.expires))
+    .y0(height)
+    .y1(function (d) {
+      return y(d.rate)
+    })
+    .defined((d) => d.rate !== 0)
+    .curve(d3.curveStep)
 
-    const area = d3.area()
-        .x(d => x(d.date))
-        .x0(d => x(d.expires))
-        .y0(height)
-        .y1(function(d) { return y(d.rate) })
-        .defined(d => d.rate !== 0)
-        .curve(d3.curveStep)
+  return (
+    <g transform="translate(0,00)">
+      {/* Axes. */}
+      <g ref={xAxisRef}></g>
+      <g ref={yAxisRef} transform={`translate(0, ${height})`}></g>
 
-    return <g transform='translate(0,00)'>
-        {/* Axes. */}
-        <g ref={xAxisRef}>
-        </g>
-        <g ref={yAxisRef} transform={`translate(0, ${height})`}>
-        </g>
-
-        <path
-            d={area(data)}
-            class={styles.tempBasal}/>
+      <path d={area(data)} class={styles.tempBasal} />
     </g>
+  )
 }
 
-
 // Treatment schema.
-// 
+//
 /*
     {
         "_id": "5f1904678b6aca48aaf74218",

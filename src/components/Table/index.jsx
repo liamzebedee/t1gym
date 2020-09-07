@@ -1,5 +1,5 @@
-import { Box, BoxProps } from "@chakra-ui/core";
-import React from "react";
+import { Box, BoxProps } from "@chakra-ui/core"
+import React from "react"
 
 /**
  * The style of this component is inspired by Tailwind UI.
@@ -16,7 +16,7 @@ export function Table(props) {
     <Box shadow="sm" rounded="lg" overflow="hidden">
       <Box as="table" width="full" {...props} />
     </Box>
-  );
+  )
 }
 
 /**
@@ -24,7 +24,7 @@ export function Table(props) {
  * renders a `<thead>` HTML element.
  */
 export function TableHead(props) {
-  return <Box as="thead" {...props} />;
+  return <Box as="thead" {...props} />
 }
 
 /**
@@ -33,7 +33,7 @@ export function TableHead(props) {
  * HTML element.
  */
 export function TableRow(props) {
-  return <Box as="tr" {...props} />;
+  return <Box as="tr" {...props} />
 }
 
 /**
@@ -57,7 +57,7 @@ export function TableHeader(props) {
       fontWeight="medium"
       {...props}
     />
-  );
+  )
 }
 
 /**
@@ -65,7 +65,7 @@ export function TableHeader(props) {
  * the table. It renders a `<tbody>` HTML element.
  */
 export function TableBody(props) {
-  return <Box as="tbody" {...props} />;
+  return <Box as="tbody" {...props} />
 }
 
 /**
@@ -82,5 +82,5 @@ export function TableCell(props) {
       whiteSpace="nowrap"
       {...props}
     />
-  );
+  )
 }

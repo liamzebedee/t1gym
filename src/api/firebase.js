@@ -1,11 +1,11 @@
 const admin = require("firebase-admin")
-const atob = require('atob')
+const atob = require("atob")
 
 // We encode the Google serviceAccountKey in base64.
 // See: https://github.com/vercel/vercel/issues/749
 const serviceAccountBase64 = process.env.GOOGLE_SERVICE_ACCOUNT_KEY
-if(!serviceAccountBase64) {
-    throw new Error("GOOGLE_SERVICE_ACCOUNT_KEY is undefined.")
+if (!serviceAccountBase64) {
+  throw new Error("GOOGLE_SERVICE_ACCOUNT_KEY is undefined.")
 }
 const serviceAccount = JSON.parse(atob(serviceAccountBase64))
 
@@ -15,7 +15,7 @@ const serviceAccount = JSON.parse(atob(serviceAccountBase64))
 try {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    databaseURL: "https://diasim.firebaseio.com"
+    databaseURL: "https://diasim.firebaseio.com",
   })
 } catch (error) {
   /*
@@ -24,7 +24,7 @@ try {
    */
   if (!/already exists/u.test(error.message)) {
     // eslint-disable-next-line no-console
-    console.error('Firebase admin initialization error', error.stack);
+    console.error("Firebase admin initialization error", error.stack)
   }
 }
 
