@@ -22,7 +22,7 @@ function useEditKey() {
  * @property {string} notes
  */
 
-export const AnnotationInputControl = ({ startTime, endTime, onSave, onDiscard, stats }) => {
+export const NewAnnotationControl = ({ startTime, endTime, onSave, onDiscard, stats }) => {
     let [editKey, resetEditKey] = useEditKey()
 
     useEffect(() => {

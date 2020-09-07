@@ -44,3 +44,32 @@
 .dateLabel {
     stroke: #afafaf;
 }
+
+@keyframes pulsating-skeleton2 {
+    from {
+        /* fill-opacity: 0.5; */
+        fill: #EDF2F7;
+        border-color:#EDF2F7
+    }
+    to {
+        /* fill-opacity: 0.9; */
+        fill: #A0AEC0;
+        border-color:#A0AEC0
+    }
+}
+
+.loading g > circle {
+    /* 
+     * styled-components fails to generate the one-line syntax [1] for the animation below.
+     *     animation: 800ms linear 0ms infinite alternate none pulsating-skeleton2;     <---
+     * As we are using CSS modules, it generates a local scope for the animation name.
+     * Though when using the one-line syntax, it fails to interpolate the name, instead
+     * leaving it as :local(pulsating-skeleton2).
+     */
+    animation-duration: 800ms;
+    animation-timing-function: linear;
+    animation-play-state: running;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+    animation-name: pulsating-skeleton2;
+}
