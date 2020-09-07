@@ -74,6 +74,7 @@
 
 import _ from 'lodash'
 import { DateTime } from 'luxon'
+import { MINUTE } from '../model'
 
 /**
  * Computes the complete basal series from a series of 
@@ -82,75 +83,75 @@ import { DateTime } from 'luxon'
  * @param {Array<NSTempBasalTreatment>} treatments 
  * @returns {BasalSeries}
  */
-export function getBasalSeries(profiles, treatments, fromDate, fromTime, toTime) {
+export function getBasalSeries(profiles, treatments, fromDate, toDate) {
     /** @type {BasalSeries} */
     let basalSeries = []
 
-    // Normalise into timeline of profile changes and treatment events.
-    let timeline = []
-    let profilesPaired = getPairs(
-        profiles.filter((profile) => profile.mills >= fromDate)
-    )
-    timeline.concat(
-        profilesPaired.map(pair => {
-            return {
-                fromTime: parseInt(pair[0].mills),
-                toTime: parseInt(pair[1].mills),
-                profile: pair[0]
-            }
-        })
-    )
-    timeline.concat(
-        getPairs(treatments).map(pair => {
-            return {
-                fromTime: +new Date(pair[0].created_at),
-                toTime: +new Date(pair[1].created_at),
-                treatment: pair[0]
-            }
-        })
-    )
-
-    let currentTime
-    let currentProfile
-
-    timeline = _.sortBy(timeline, 'fromTime')
-
+    treatments = treatments.map(treatment => {
+        return { ...treatment, time: +new Date(treatment.timestamp) }
+    })
     
     let event
     let basals = []
 
-    while(timeline.length) {
-        event = timeline.shift()
-        basals = []
-        
-        // Update profile.
-        if(event.profile) {
-            currentProfile = event.profile
-            // basalSeries.push(
-            //     getActiveBasals(currentProfile, currentTime, event.toTime)
-            // )
-            currentTime = event.fromTime
-            continue
-        }
-
-        // Push default basal.
-        basals.push(
-            getActiveBasals(currentProfile, currentTime, event.toTime)
-        )
-
-        if(event.treatment) {
-            const { rate, } = event.treatment
-            basals.push({
-                rate,
-                startTime
-            })
+    let activeBasal = null
+    let lastTreatment = null
+    for(let i = fromDate; i <= toDate; i += 5 * MINUTE) {
+        if(lastTreatment) {
+            const expiresAt = lastTreatment.time + lastTreatment.duration*MINUTE
+            if(i > expiresAt) {
+                activeBasal = null // expired
+                lastTreatment = null
+            }
         }
         
-        basalSeries.push(basals)
-        currentTime = event.fromTime
+        if(!activeBasal) {
+            const currentProfile = getCurrentProfile(profiles, i)
+            
+            let profileBasal = getActiveBasals(
+                currentProfile.store[currentProfile.defaultProfile].basal,
+                i, i + 5*MINUTE
+            ).pop()
+
+            activeBasal = {
+                rate: profileBasal.rate,
+                startTime: i
+            }
+            lastTreatment = {
+                duration: 5,
+                time: i
+            }
+        }
+        
+        // Find all treatments within this 5 minute range, apply the most recent.
+        let latestTreatment = treatments
+            .filter(el => el.time >= i && el.time <= i + 5*MINUTE).pop()
+        
+        if(latestTreatment) {
+            lastTreatment = latestTreatment
+            activeBasal = {
+                rate: latestTreatment.rate,
+                startTime: latestTreatment.time
+            }
+        }
+        
+        basalSeries = [
+            ...basalSeries,
+            Object.assign({}, activeBasal)
+        ]
     }
 
     return basalSeries
+}
+
+/** 
+ * @param {Array<NSProfile>} profiles 
+ */
+export function getCurrentProfile(profiles, time) {
+    const s3 = _.sortBy(
+        profiles.filter(profile => profile.mills <= time), ['mills']
+    ).pop()
+    return s3
 }
 
 /**
@@ -158,44 +159,20 @@ export function getBasalSeries(profiles, treatments, fromDate, fromTime, toTime)
  * @param {number} fromDate A millisecond datetime.
  * @param {number} toDate A millisecond datetime.
  */
-export function getActiveBasals(profile, fromDate, toDate) {
+export function getActiveBasals(profileBasals, fromDate, toDate) {
     if(fromDate >= toDate) return []
 
     // Convert date to relative seconds after midnight.
     const fromDateDT = DateTime.fromMillis(fromDate)
-    const fromTimeAsSeconds = fromDateDT
-        .set({
-            year: 0,
-            month: 0,
-            day: 0,
-            millisecond: 0,
-        })
-        .toSeconds()
+    const fromTimeAsSeconds = fromDateDT.diff(fromDateDT.plus({ day: 1 }).startOf('day'), 'second').seconds * -1
     
-    const profileStore = profile.store[profile.defaultProfile]
-    const basals = profileStore.basal
-        .filter(basal => basal.timeAsSeconds >= fromTimeAsSeconds)
-
-    const basal = basals[0]
+    const basals = profileBasals
+        .filter(basal => basal.timeAsSeconds <= fromTimeAsSeconds)
+    if(!basals.length) debugger
+    const basal = basals.pop()
     const activeBasal = {
-        rate: basal.rate,
-        startTime: fromDate + (basals[0].timeAsSeconds * 1000)
+        rate: basal.value,
+        startTime: fromDate + (basal.timeAsSeconds * 1000)
     }
-    
-    return [
-        activeBasal,
-        ...getActiveBasals(profile, fromDate + (basals[0].timeAsSeconds * 1000), toDate)
-    ]
+    return [activeBasal]
 }
-
-export function getPairs(list) {
-    let pairs = []
-    for(let i = 0; i < list.length; i++) {
-        if((i + 1) == list.length) {
-            pairs.push([ list[0], list[i] ])
-        } else {
-            pairs.push([ list[i], list[i + 1] ])
-        }
-    }
-}
-
