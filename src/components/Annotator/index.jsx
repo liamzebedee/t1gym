@@ -50,7 +50,7 @@ function isInsulinTreatment(treatment) {
 }
 
 export const Annotator = (props) => {
-    const { data, treatments, onAnnotation } = props
+    const { profiles, data, treatments, onAnnotation } = props
 
     const d3Container = useRef(null);
 
@@ -192,6 +192,7 @@ export const Annotator = (props) => {
 
             <Flex flex="6" align="start" justify="start" mr={5}>
                 <Chart 
+                    profiles={profiles}
                     data={data} 
                     onEndBrush={onEndBrush}
                     annotations={(previewedAnnotation != null) && [ _.find(annotations, { id: previewedAnnotation }) ]}

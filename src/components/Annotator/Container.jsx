@@ -5,7 +5,7 @@ import { usePromiseLoadingState } from '../../pages/helpers'
 import { annotationRepository } from '../../misc/annotation_repository'
 import DatabaseService from '../../misc/db_service'
 
-export const AnnotatorContainer = ({ treatments, data = [] }) => {
+export const AnnotatorContainer = ({ profiles = [], treatments, data = [] }) => {
     const [annotations, setAnnotations] = useState(null)
 
     async function _loadAnnotations() {
@@ -31,6 +31,7 @@ export const AnnotatorContainer = ({ treatments, data = [] }) => {
     return <>
         { loading && '' }
         { loading == false && <Annotator
+            profiles={profiles}
             data={data}
             treatments={treatments}
             annotations={annotations}

@@ -11,6 +11,7 @@ import { functions, MINUTE, compose, SECOND } from "../../model";
 
 
 import { PROFILE } from '../../misc/constants'
+import { getBasalSeries } from "../../misc/basals";
 
 export const Chart = (props) => {
     let onEndBrush = props.onEndBrush || function () { }
@@ -18,6 +19,7 @@ export const Chart = (props) => {
 
     const annotations = props.annotations || []
     const events = props.events || []
+    const profiles = props.profiles
     const userProfile = PROFILE
 
     // Layout.
@@ -142,36 +144,6 @@ export const Chart = (props) => {
         const yi = yIdx(data, date)
         if(yi === 0) return data[yi]
         else return data[yi - 1]
-    }
-
-    function generateTempBasalEntries(fromDate, toDate) {
-        let entries = []
-        let intervals = []
-
-        events
-        .filter(event => event.eventType === 'Temp Basal')
-        .map((event, i) => {
-            const {
-                duration,
-                rate,
-                timestamp
-            } = event
-            
-            let date = +new Date(timestamp)
-            const from = date
-            const to = DateTime.fromJSDate(new Date(date))
-                .plus({ minutes: duration })
-                .toMillis()
-            
-            intervals.push({
-                from,
-                to,
-                rate,
-                duration
-            })
-        })
-        
-
     }
         
     return <>
@@ -370,14 +342,15 @@ export const Chart = (props) => {
                 height={tempBasalArea.height}
                 width={width}
                 extent={calcExtent(extent)}
-                events={events}
+                basalSeries={getBasalSeries(profiles, events.filter(event => event.eventType == 'Temp Basal'), extent[0], extent[1])}
                 />
         </g> }
     </svg>
     </>
 }
 
-export const TempBasalChart = ({ height = 200, width, extent, events }) => {
+
+export const TempBasalChart = ({ height = 200, width, extent, basalSeries }) => {
     const x = d3.scaleTime()
         .domain(extent)
         .range([0, width])
@@ -406,27 +379,11 @@ export const TempBasalChart = ({ height = 200, width, extent, events }) => {
         d3.select(el).call(yAxis)
     }
 
-    const data = events
-        .filter(event => event.eventType === 'Temp Basal')
-        .map((event, i) => {
-            const {
-                duration,
-                rate
-            } = event
-
-            const date = new Date(event.created_at)
-            const expires = new Date(date.getTime() + (duration * MINUTE))
-            return { date, expires, duration, rate }
-        })
-        // .filter(d => d.duration > 6)
-    
-
     const area = d3.area()
-        .x(d => x(d.date))
-        .x0(d => x(d.expires))
+        .x(d => x(d.startTime))
         .y0(height)
-        .y1(function(d) { return y(d.rate) })
-        .defined(d => d.rate !== 0)
+        .y1(d => y(d.rate))
+        // .defined(d => d.rate !== 0)
         .curve(d3.curveStep)
 
     return <g transform='translate(0,00)'>
@@ -437,7 +394,7 @@ export const TempBasalChart = ({ height = 200, width, extent, events }) => {
         </g>
 
         <path
-            d={area(data)}
+            d={area(basalSeries)}
             class={styles.tempBasal}/>
     </g>
 }
@@ -530,3 +487,6 @@ export const TempBasalChart = ({ height = 200, width, extent, events }) => {
  "insulin": null
 }
     */
+
+
+    
