@@ -87,3 +87,22 @@ export async function fetchNightscoutData(user, range) {
         data: sgvs,
     }
 }
+
+export async function getProfiles(user, range) {
+    const db = await getMongoDatabase(user)
+
+    const treatmentTimeRange = range.map(v => {
+        return v.setZone('utc').toISO()
+    })
+
+    const profiles = await db.collection('profile')
+        .find({
+            startDate: {
+                $gte: treatmentTimeRange[0],
+                $lte: treatmentTimeRange[1],
+            }
+        })
+        .toArray()
+    
+    return profiles
+}
