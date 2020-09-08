@@ -1,6 +1,6 @@
 
 import * as d3 from "d3";
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useContext } from 'react';
 import { intervalSearch } from "../../pages/helpers";
 
 import { Duration, DateTime } from 'luxon'
@@ -9,9 +9,9 @@ import { v4 as uuidv4 } from 'uuid';
 import styles from './styles.module.css'
 import { functions, MINUTE, compose, SECOND } from "../../model";
 
-
 import { PROFILE } from '../../misc/constants'
 import { getBasalSeries } from "../../misc/basals";
+import { NightscoutProfilesContext } from "../../misc/contexts";
 
 export const Chart = (props) => {
     let onEndBrush = props.onEndBrush || function () { }
@@ -19,7 +19,7 @@ export const Chart = (props) => {
 
     const annotations = props.annotations || []
     const events = props.events || []
-    const profiles = props.profiles
+    const profiles = useContext(NightscoutProfilesContext)
     const userProfile = PROFILE
 
     // Layout.

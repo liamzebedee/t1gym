@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import queryString from 'query-string'
 import { tz } from "../../misc/wrappers"
 import { Icon, Text } from "@chakra-ui/core";
+import { NightscoutProfilesContext } from "../../misc/contexts"
 
 export const Analyse = () => {
     const [bgs, setBgs] = useState(null)
@@ -15,10 +16,12 @@ export const Analyse = () => {
         const params = {
             tz
         }
-        const data = await fetch(`/api/bgs/daily?${queryString.stringify(params)}`).then(res => res.json())
-        const profiles = await fetch(`/api/profiles?${queryString.stringify(params)}`).then(res => res.json())
+        const [ bgs, profiles ] = await Promise.all([
+            fetch(`/api/bgs/daily?${queryString.stringify(params)}`).then(res => res.json()),
+            fetch(`/api/profiles?${queryString.stringify(params)}`).then(res => res.json())
+        ])
         setProfiles(profiles)
-        setBgs(data)
+        setBgs(bgs)
     }
 
     useEffect(() => {
@@ -34,14 +37,15 @@ export const Analyse = () => {
         {loadingBGData && <>
             <span><CircularProgress isIndeterminate size="sm" color="green"/> Loading BG's from Nightscout...</span>
         </>}
-        
-        {bgs && bgs.map((bgset, i) => {
-            return <div key={i}>
-                <AnnotatorContainer 
-                    profiles={profiles}
-                    data={convertData(bgset.data)}
-                    treatments={bgset.treatments}/>
-            </div>
-        })}
+
+        <NightscoutProfilesContext.Provider value={profiles}>
+            {bgs && bgs.map((bgset, i) => {
+                return <div key={i}>
+                    <AnnotatorContainer 
+                        data={convertData(bgset.data)}
+                        treatments={bgset.treatments}/>
+                </div>
+            })}
+        </NightscoutProfilesContext.Provider>
     </Box>
 }
