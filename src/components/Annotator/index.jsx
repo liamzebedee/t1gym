@@ -190,7 +190,7 @@ export const Annotator = (props) => {
                 </Stack>
             </Flex>
 
-            <Flex flex="6" align="start" justify="start" mr={5}>
+            <Flex flex="6" align="start" justify="start" flexDirection='column' mr={5}>
                 <Chart 
                     data={data} 
                     onEndBrush={onEndBrush}

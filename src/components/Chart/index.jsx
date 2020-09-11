@@ -24,20 +24,15 @@ export const Chart = (props) => {
 
     // Layout.
     // 
-    
-    const tempBasalArea = {
-        height: 200,
-        marginTop: 50
+    const margin = {
+        top: 30,
+        bottom: 30,
+        left: 40,
+        right: 40
     }
 
-    let margin = { top: 1, right: 30, bottom: 30, left: 60 }
-    
-    let width = 1200
-    let height = 400
-    
-    if(!props.showTempBasalChart) {
-        height += tempBasalArea.height
-    }
+    const width = 1200
+    const height = 400
 
 
     // 
@@ -61,25 +56,23 @@ export const Chart = (props) => {
 
     const x = d3.scaleTime()
         .domain(calcExtent(extent, props.dynamicExtent))
-        .range([0, width])
+        .range([margin.left, width - margin.right])
         .clamp(true)
 
     const y = d3.scaleLinear()
         .domain([0, 23])
-        .range([height, 0])
+        .range([height - margin.bottom, margin.top])
 
 
-    const axisRef = el => {
-        el && d3.select(el).call(
-            d3.axisLeft(y)
-        )
+    const yAxisRef = el => {
+        const yAxis = d3.axisLeft(y)
+        d3.select(el).call(yAxis)
     }
 
-
-    let flip = false
-    const axisRef2 = el => {
+    const xAxisRef = el => {
         let yAxis = d3.axisBottom(x)
         if (!props.dynamicExtent) {
+            let flip = false
             yAxis = yAxis
                 .ticks(d3.timeMinute.every(120))
                 .tickFormat(x => {
@@ -114,7 +107,10 @@ export const Chart = (props) => {
         // Add brushing
         d3.select(el)
             .call(d3.brushX()
-                .extent([[0, 0], [width, height]])
+                .extent(
+                    [[0 + margin.left, 0 + margin.top], 
+                    [width - margin.right, height - margin.top]
+                ])
                 .on("end", function () {
                     let extent = d3.event.selection
                     if (extent != null) {
@@ -125,7 +121,6 @@ export const Chart = (props) => {
                 })
             )
     }
-
 
     const yIdx = d3.bisector(d => d.date).right
 
@@ -146,17 +141,23 @@ export const Chart = (props) => {
         else return data[yi - 1]
     }
         
-    return <>
-    <svg
-        // width={'100%'} height={'100%'}
-        viewBox={`0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom + tempBasalArea.height + tempBasalArea.marginTop}`}
-        className={styles.chart}>
-        <g transform={`translate(${margin.left}, ${margin.top})`}>
+    return <div className={styles.chart}>
+        <svg className={styles.bgChart} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio={0}>
             {/* Axes. */}
-            <g ref={axisRef}>
+            <g ref={xAxisRef} transform={`translate(0, ${height - margin.bottom})`}>
             </g>
-            <g ref={axisRef2} transform={"translate(0," + height + ")"}>
+
+            <g ref={yAxisRef} transform={`translate(${margin.left}, 0)`}>
             </g>
+
+            {/* In range box. */}
+            <rect
+                x={margin.left}
+                y={y(inRangeShapeDescription.end)}
+                width={width - margin.right - margin.left}
+                height={y(inRangeShapeDescription.start) - y(inRangeShapeDescription.end)}
+                stroke='gray'
+                fill='#7fff7f30' />
 
             <g ref={svgRef}>
                 {/* Line */}
@@ -322,40 +323,27 @@ export const Chart = (props) => {
                     </g>
                 })}
 
-
-                {/* In range box. */}
-                <rect
-                    x={0}
-                    y={y(inRangeShapeDescription.end)}
-                    width={width}
-                    height={y(inRangeShapeDescription.start) - y(inRangeShapeDescription.end)}
-                    stroke='black'
-                    fill='#7fff7f30' />
             </g>
-        </g>
-        
+        </svg>
+
         {props.showTempBasalChart &&
-        <g transform={`translate(${margin.left}, ${margin.top + height + tempBasalArea.marginTop})`}>
             <TempBasalChart
-                height={tempBasalArea.height}
-                width={width}
                 extent={calcExtent(extent)}
                 basalSeries={getBasalSeries(profiles, events.filter(event => event.eventType == 'Temp Basal'), extent[0], extent[1])}
-                />
-        </g> }
-    </svg>
-    </>
+            />
+        }
+    </div>
 }
 
 
-export const TempBasalChart = ({ width = 800, height = 300, extent, basalSeries }) => {
+export const TempBasalChart = ({ width = 1200, height = 300, extent, basalSeries }) => {
     // Following the D3.js margin convention, mentioned here [1].
     // [1]: https://observablehq.com/@d3/margin-convention
     const margin = {
-        top: 20,
-        bottom: 20,
-        left: 30,
-        right: 30
+        top: 30,
+        bottom: 30,
+        left: 40,
+        right: 40
     }
 
     const x = d3.scaleTime()
@@ -390,7 +378,7 @@ export const TempBasalChart = ({ width = 800, height = 300, extent, basalSeries 
         // .defined(d => d.rate !== 0)
         .curve(d3.curveStep)
 
-    return <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio={1}>
+    return <svg className={styles.tempBasalChart} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio={0}>
         {/* Axes. */}
         <g ref={xAxisRef} transform={`translate(0, ${height - margin.bottom})`}>
         </g>

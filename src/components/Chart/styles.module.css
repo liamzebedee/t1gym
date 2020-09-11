@@ -8,6 +8,15 @@
     max-width: 1000px;
 }
 
+.chart > svg { 
+}
+
+.bgChart {
+}
+
+.tempBasalChart {
+}
+
 .chart text {
     font-size: 1rem;
 }
