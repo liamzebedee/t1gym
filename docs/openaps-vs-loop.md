@@ -11,6 +11,72 @@ Differences between Nightscout data
     In Loop, it is in the UTC timezone.
     In OpenAPS, it is in the user's local timezone.
 
+### Meal Bolus
+
+#### OpenAPS
+
+```json
+{
+    "_id": "5f1afb118b6aca48aa123400",
+    "duration": 0,
+    "bolus": {
+    "timestamp": "2020-07-22T00:01:59+10:00",
+    "_type": "Bolus",
+    "id": "AVJSAHvBQBYU",
+    "amount": 8.2,
+    "programmed": 8.2,
+    "unabsorbed": 0,
+    "duration": 0
+    },
+    "timestamp": "2020-07-22T00:01:59+10:00",
+    "created_at": "2020-07-21T14:01:59.000Z",
+    "carbs": 82,
+    "ratio": "10",
+    "wizard": {
+        "timestamp": "2020-07-22T00:01:59+10:00",
+        "_type": "BolusWizard",
+        "id": "WwB7wQAWFFKQChlBAFIAAAAAUkE=",
+        "carb_input": 82,
+        "carb_ratio": 10,
+        "correction_estimate": 0,
+        "food_estimate": 8.2,
+        "unabsorbed_insulin_total": 0,
+        "bolus_estimate": 8.2,
+        "bg": 0,
+        "bg_target_low": 6.5,
+        "bg_target_high": 6.5,
+        "sensitivity": 2.5,
+        "units": "mmol"
+    },
+    "eventType": "Meal Bolus",
+    "insulin": 8.2,
+    "notes": "Normal bolus with wizard.\nCalculated IOB: -0.203\nProgrammed bolus 8.2\nDelivered bolus 8.2\nPercent delivered:  100%\nFood estimate 8.2\nCorrection estimate 0\nBolus estimate 8.2\nTarget low 6.5\nTarget high 6.5\nHypothetical glucose delta -20.5",
+    "medtronic": "mm://openaps/mm-format-ns-treatments/Meal Bolus",
+    "enteredBy": "openaps://medtronic/722",
+    "utcOffset": 600
+}
+```
+
+### Correction bolus
+
+#### Loop
+
+```json
+{
+    "_id": "5f1904678b6aca48aaf74218",
+    "timestamp": "2020-07-22T01:53:48Z",
+    "insulin": 1.2,
+    "created_at": "2020-07-22T01:53:48.000Z",
+    "unabsorbed": 0,
+    "type": "normal",
+    "enteredBy": "loop://Liam Edwards-Playne’s iPhone",
+    "eventType": "Correction Bolus",
+    "duration": 0.8,
+    "programmed": 1.2,
+    "utcOffset": 0
+}
+```
+
 ### Temp Basal
 
 #### OpenAPS
