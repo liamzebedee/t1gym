@@ -96,6 +96,10 @@ export const NewAnnotationControl = ({ startTime, endTime, onSave, onDiscard, st
                 <span style={{ width: 150 }}>
                     <b>Total insulin</b>: <span className={styles.insulin}>{(stats.totalInsulin || 0).toFixed(1)}U</span>
                 </span>
+                <Box paddingRight="5"></Box>
+                <span style={{ width: 200 }}>
+                    <b>Total basal insulin</b>: <span className={styles.insulin}>{(stats.totalBasalInsulin || 0).toFixed(1)}U</span>
+                </span>
             </Flex>
 
             <FormControl>

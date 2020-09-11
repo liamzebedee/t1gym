@@ -10,15 +10,15 @@ import styles from './styles.module.css'
 import { functions, MINUTE, compose, SECOND } from "../../model";
 
 import { PROFILE } from '../../misc/constants'
-import { getBasalSeries } from "../../misc/basals";
 import { NightscoutProfilesContext } from "../../misc/contexts";
 
 export const Chart = (props) => {
-    let onEndBrush = props.onEndBrush || function () { }
+    let onEndBrush = props.onEndBrush || identity
     const data = _.sortBy(props.data, 'date')
 
     const annotations = props.annotations || []
     const events = props.events || []
+    const basalSeries = props.basalSeries || []
     const profiles = useContext(NightscoutProfilesContext)
     const userProfile = PROFILE
 
@@ -329,14 +329,15 @@ export const Chart = (props) => {
         {props.showTempBasalChart &&
             <TempBasalChart
                 extent={calcExtent(extent)}
-                basalSeries={getBasalSeries(profiles, events.filter(event => event.eventType == 'Temp Basal'), extent[0], extent[1])}
+                basalSeries={basalSeries}
             />
         }
     </div>
 }
 
+import { identity } from 'lodash'
 
-export const TempBasalChart = ({ width = 1200, height = 300, extent, basalSeries }) => {
+export const TempBasalChart = ({ width = 1200, height = 300, extent, basalSeries, onEndBrush = identity, bgBrushExtent = null }) => {
     // Following the D3.js margin convention, mentioned here [1].
     // [1]: https://observablehq.com/@d3/margin-convention
     const margin = {
