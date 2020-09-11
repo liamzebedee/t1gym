@@ -283,7 +283,6 @@ export const Chart = (props) => {
                     if(!carbs) return
 
                     const date = new Date(event.created_at)
-                    if(date < extent[0]) return // TODO(liamz): quick hack to work around out-of-date-range events.
                     const CARB_SCALE_FACTOR = 3
                     const height = carbs * CARB_SCALE_FACTOR
 
@@ -311,7 +310,6 @@ export const Chart = (props) => {
                     if(!insulin) return
 
                     const date = new Date(event.created_at)
-                    if(date < extent[0]) return // TODO(liamz): quick hack to work around out-of-date-range events.
                     const INSULIN_SCALE_FACTOR = 15
                     const height = insulin * INSULIN_SCALE_FACTOR
 
