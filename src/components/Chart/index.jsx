@@ -348,53 +348,60 @@ export const Chart = (props) => {
 }
 
 
-export const TempBasalChart = ({ height = 200, width, extent, basalSeries }) => {
+export const TempBasalChart = ({ width = 800, height = 300, extent, basalSeries }) => {
+    // Following the D3.js margin convention, mentioned here [1].
+    // [1]: https://observablehq.com/@d3/margin-convention
+    const margin = {
+        top: 20,
+        bottom: 20,
+        left: 30,
+        right: 30
+    }
+
     const x = d3.scaleTime()
         .domain(extent)
-        .range([0, width])
-        // .clamp(true)
+        .range([margin.left, width - margin.right])
 
+    const xAxisRef = el => {
+        let xAxis = d3.axisBottom(x).ticks(5)
+        d3.select(el).call(xAxis)
+    }
+    
     const MAX_TEMP_BASAL_UNITS = 6
     const y = d3.scaleLinear()
         .domain([0, MAX_TEMP_BASAL_UNITS])
-        .range([height, 0])
+        .range([height - margin.bottom, margin.top])
+        // .range([height - margin.bottom, margin.top])
         // We clamp the range, as I've noticed Loop has erroneously recorded
         // a temp basal much above the user-defined safety limits. The basal was
         // 35U for 2mins or so. Clamping is a simple sanity check for this
         // behaviour, as it is usually replaced by a reasonable temp.
         .clamp(true)
 
-
-    const xAxisRef = el => {
-        el && d3.select(el).call(
-            d3.axisLeft(y)
-        )
-    }
-
-    let flip = false
     const yAxisRef = el => {
-        let yAxis = d3.axisBottom(x).ticks(5)
+        let yAxis = d3.axisLeft(y)
         d3.select(el).call(yAxis)
     }
 
     const area = d3.area()
         .x(d => x(d.startTime))
-        .y0(height)
+        .y0(height - margin.bottom)
         .y1(d => y(d.rate))
         // .defined(d => d.rate !== 0)
         .curve(d3.curveStep)
 
-    return <g transform='translate(0,00)'>
+    return <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio={1}>
         {/* Axes. */}
-        <g ref={xAxisRef}>
+        <g ref={xAxisRef} transform={`translate(0, ${height - margin.bottom})`}>
         </g>
-        <g ref={yAxisRef} transform={`translate(0, ${height})`}>
+
+        <g ref={yAxisRef} transform={`translate(${margin.left}, 0)`}>
         </g>
 
         <path
             d={area(basalSeries)}
             class={styles.tempBasal}/>
-    </g>
+    </svg>
 }
 
 
