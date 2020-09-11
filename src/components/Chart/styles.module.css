@@ -8,6 +8,11 @@
     max-width: 1000px;
 }
 
+/* Style the d3-brush. */
+svg .selection :global {
+    stroke: none;
+}
+
 .chart > svg { 
 }
 
