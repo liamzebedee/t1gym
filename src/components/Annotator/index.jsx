@@ -139,7 +139,7 @@ export const Annotator = (props) => {
                 <Stack flexGrow={1} spacing={8}>
                     <Box>
                         <Heading fontSize="xl" mb={5}>
-                            {day.toFormat('DDD')}
+                            {day.toFormat('ccc DDD')}
                         </Heading>
                         
                         <Table>
