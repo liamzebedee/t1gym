@@ -277,15 +277,16 @@ export function convertFromMgToMmol(v) {
 
 // Convert American glucose units.
 export function convertData(d) {
-    return d
-        .map(d => {
+    return _.sortBy(
+        d.map(d => {
             return {
                 ...d,
                 date: d.date,
                 sgv: convertFromMgToMmol(d.sgv)
             }
-        })
-        .reverse()
+        }), 
+        'date'
+    )
 }
 
 export default () => null
