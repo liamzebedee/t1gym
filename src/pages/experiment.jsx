@@ -163,8 +163,8 @@ const Graph = () => {
     const [eventsText, setEventsText] = useState('')
 
     // Body metabolism model.
-    const [insulinSensitivity, setInsulinSensitivity] = useState(-1.8)
-    const [carbSensitivity, setCarbSensitivity] = useState(0.27)
+    const [insulinSensitivity, setInsulinSensitivity] = useState(-2.2)
+    const [carbSensitivity, setCarbSensitivity] = useState(0.3)
 
     // Insulin pump settings model.
     const [bolusText, setBolus] = useState(`00.00 11g\n06.00 7g\n10.00 11g`)
