@@ -50,9 +50,17 @@ function calcStats(treatments, extent, data, basalSeries) {
         })
 
     const basalFns = basalSeries
-        .filter(entry => !entry.isProfileBasal) // only include the temp basal treatments. default basals aren't that helpful informatically (assuming they're correct).
+        .filter(basalEntry => !basalEntry.profileRate.isActive) // only include the temp basal treatments. default basals aren't that helpful informatically (assuming they're correct).
         .map(basalEntry => {
-            const amount = basalEntry.rate / (60 / 5)
+            const deltaProfileRate = basalEntry.rate - basalEntry.profileRate.rate
+            return {
+                ...basalEntry,
+                deltaProfileRate
+            }
+        })
+        .filter(basalEntry => basalEntry.deltaProfileRate >= 0)
+        .map(basalEntry => {
+            const amount = basalEntry.deltaProfileRate / (60 / 5)
             return insulinOnBoard(amount, basalEntry.startTime)
         })
 
