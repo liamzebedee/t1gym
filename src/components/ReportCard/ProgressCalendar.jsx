@@ -75,7 +75,7 @@ export const ProgressCalendar = ({ loading, data, previewedDay, selectedDay, hov
 
                 // Show PGS only if the day contained data.
                 let pgs
-                if(datum && datum.stats) {
+                if(datum && datum.stats && !date.equals(today)) {
                     const { PGS } = datum.stats
                     pgs = <g 
                         transform={`translate(65,80)`}
