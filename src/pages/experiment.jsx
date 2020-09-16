@@ -503,7 +503,7 @@ const Graph = () => {
 
                 <Stack shouldWrapChildren isInline>
                     <FormControl>
-                        <FormLabel htmlFor="carb-sensitivity">🍎 Carb. sensitivity (15g : x mmol)</FormLabel>
+                        <FormLabel htmlFor="carb-sensitivity">🍎 Carb. sensitivity (1g : x mmol)</FormLabel>
                         <NumberInput 
                             id="carb-sensitivity" size="sm" defaultValue={carbSensitivity} precision={2} step={0.01} 
                             onChange={debouncedOnChangeNumberInput(x => setCarbSensitivity(parseFloat(x)))}>
