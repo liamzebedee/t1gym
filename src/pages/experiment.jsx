@@ -95,7 +95,7 @@ function getData(glucoseFeed, fromTo, events, model) {
     }
 
     // Run simulation.
-    const intoFuture = 0
+    const intoFuture = 4*HOUR
     let predicted = Model.simulate(observed1, intoFuture, events.map(eventToFunction), model)
 
     // Convert to Plotly format.
