@@ -6,6 +6,7 @@ import queryString from 'query-string'
 import { tz } from "../../misc/wrappers"
 import { Icon, Text } from "@chakra-ui/core";
 import { NightscoutProfilesContext } from "../../misc/contexts"
+import * as _ from 'lodash'
 
 export const Analyse = () => {
     const [bgs, setBgs] = useState(null)
@@ -20,7 +21,7 @@ export const Analyse = () => {
             fetch(`/api/bgs/daily?${queryString.stringify(params)}`).then(res => res.json()),
             fetch(`/api/profiles?${queryString.stringify(params)}`).then(res => res.json())
         ])
-        setProfiles(profiles)
+        setProfiles(_.sortBy(profiles, 'mills'))
         setBgs(bgs)
     }
 

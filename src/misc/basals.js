@@ -96,6 +96,10 @@ export function getBasalSeries(profiles, treatments, fromDate, toDate) {
 
     let activeBasal = null
     let lastTreatment = null
+
+    // Convert date to relative seconds after midnight.
+    const startOfDayMs = DateTime.fromMillis(fromDate).startOf('day').toMillis()
+
     for(let i = fromDate; i <= toDate; i += 5 * MINUTE) {
         if(lastTreatment) {
             const expiresAt = lastTreatment.time + lastTreatment.duration*MINUTE
@@ -108,10 +112,10 @@ export function getBasalSeries(profiles, treatments, fromDate, toDate) {
         if(!activeBasal) {
             const currentProfile = getCurrentProfile(profiles, i)
             
-            let profileBasal = getActiveBasals(
+            let profileBasal = getActiveBasal(
                 currentProfile.store[currentProfile.defaultProfile].basal,
-                i, i + 5*MINUTE
-            ).pop()
+                (i - startOfDayMs) / 1000
+            )
 
             activeBasal = {
                 rate: profileBasal.rate,
@@ -124,8 +128,7 @@ export function getBasalSeries(profiles, treatments, fromDate, toDate) {
         }
         
         // Find all treatments within this 5 minute range, apply the most recent.
-        let latestTreatment = treatments
-            .filter(el => el.time >= i && el.time <= i + 5*MINUTE).pop()
+        let latestTreatment = _.find(treatments, el => el.time >= i && el.time <= i + 5*MINUTE)
         
         if(latestTreatment) {
             lastTreatment = latestTreatment
@@ -135,44 +138,28 @@ export function getBasalSeries(profiles, treatments, fromDate, toDate) {
             }
         }
         
-        basalSeries = [
-            ...basalSeries,
-            Object.assign({}, activeBasal)
-        ]
+        basalSeries.push(activeBasal)
     }
 
     return basalSeries
 }
 
 /** 
- * @param {Array<NSProfile>} profiles 
+ * @param {Array<NSProfile>} profiles Ordered list of profiles
  */
 export function getCurrentProfile(profiles, time) {
-    const s3 = _.sortBy(
-        profiles.filter(profile => profile.mills <= time), ['mills']
-    ).pop()
-    return s3
+    return _.find(profiles, profile => profile.mills <= time)
 }
 
 /**
  * @param {NSProfile} profile 
- * @param {number} fromDate A millisecond datetime.
+ * @param {number} fromTimeAsSeconds A millisecond datetime.
  * @param {number} toDate A millisecond datetime.
  */
-export function getActiveBasals(profileBasals, fromDate, toDate) {
-    if(fromDate >= toDate) return []
-
-    // Convert date to relative seconds after midnight.
-    const fromDateDT = DateTime.fromMillis(fromDate)
-    const fromTimeAsSeconds = fromDateDT.diff(fromDateDT.plus({ day: 1 }).startOf('day'), 'second').seconds * -1
-    
-    const basals = profileBasals
-        .filter(basal => basal.timeAsSeconds <= fromTimeAsSeconds)
-    if(!basals.length) debugger
-    const basal = basals.pop()
-    const activeBasal = {
-        rate: basal.value,
-        startTime: fromDate + (basal.timeAsSeconds * 1000)
+export function getActiveBasal(profileBasals, fromTimeAsSeconds) {
+    const basal = _.find(profileBasals, basal => basal.timeAsSeconds <= fromTimeAsSeconds)
+    if(!basal) debugger
+    return { 
+        rate: basal.value 
     }
-    return [activeBasal]
 }
