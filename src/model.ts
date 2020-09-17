@@ -174,7 +174,7 @@ function nsCalculateFiaspInsulinActive(amount, t) {
 
     const profile = {
         curve: 'ultra-rapid',
-        insulinPeakTime: 50,
+        insulinPeakTime: 55,
         useCustomPeakTime: true
     }
 
