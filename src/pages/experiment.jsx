@@ -548,6 +548,20 @@ const Graph = () => {
     </Box>
 }
 
+const insulinOnBoard = (amount, startTime) => {
+    const insulinActive = functions.fiaspInsulinActive(amount)
+    return u => {
+        const tickerFn = functions.beginsAfter({ start: startTime })
+        const ticker = tickerFn(u)
+        if(ticker === 0) return 0
+        return amount - insulinActive(ticker)
+    }
+}
+
+const testing2 = compose(
+    insulinOnBoard(2.0, 30 * MINUTE)    
+)
+
 const testing = compose(
     functions.foodDigestionEffect(
         functions.foodDigestion('carbs', 40, 51 / 100)
@@ -564,19 +578,28 @@ const exerciseFn = compose(
         duration: 30*MINUTE
     })
 )
-const insulinActive = functions.fiaspInsulinActive(1)
-const foodDigestionCarbs = functions.foodDigestion('carbs', 30, 0.5)
+const insulinActive = functions.fiaspInsulinActive(5.4)
+const foodDigestionCarbs = functions.foodDigestion('carbs', 60, 0.5)
+const foodDigestionCarbsMmol = functions.foodDigestionEffect(functions.foodDigestion('carbs', 60, 0.5))
 const foodDigestionProtein = functions.foodDigestion('protein', 30)
 const basal = functions.basalEffect(0.7)
 
+
+
+const example = compose(
+
+)
+
 const FunctionPlots = () => {
     return <>
-        <FunctionPlot title="Testing" id='testing' fn={testing} duration={6*HOUR}/>
+        <FunctionPlot title="Testing" id='testing' fn={testing2} duration={10*HOUR}/>
         <FunctionPlot title="Exercise (80% intensity, duration 30mins)" id='exercise' fn={exerciseFn} duration={2*HOUR}/>
         <FunctionPlot title="Fiasp insulin active" id='insulin' fn={insulinActive} duration={7*HOUR}/>
         <FunctionPlot title="Food digestion (30g - Carbs)" id='insulin' fn={foodDigestionCarbs} duration={7*HOUR}/>
+        <FunctionPlot title="Food digestion (30g - Carbs) BGL" id='insulin' fn={foodDigestionCarbsMmol} duration={7*HOUR}/>
         <FunctionPlot title="Food digestion (30g - Protein)" id='insulin' fn={foodDigestionProtein} duration={7*HOUR}/>
         <FunctionPlot title="Basal rate" id='basal' fn={basal} duration={5*HOUR}/>
+        <FunctionPlot title="40g breakfast + insulin" id='basal' fn={example} duration={5*HOUR}/>
     </>
 }
 
