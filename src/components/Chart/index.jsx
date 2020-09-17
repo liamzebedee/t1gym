@@ -15,7 +15,7 @@ import { NightscoutProfilesContext } from "../../misc/contexts";
 
 export const Chart = (props) => {
     let onEndBrush = props.onEndBrush || function () { }
-    const data = _.sortBy(props.data, 'date')
+    const data = props.data
 
     const annotations = props.annotations || []
     const events = props.events || []

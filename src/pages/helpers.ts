@@ -7,7 +7,7 @@ interface Event {
     start: number
 }
 
-import _ from 'lodash'
+import * as _ from 'lodash'
 
 export function intervalSearch(intervals, x) {
     let y = _.last(intervals)
