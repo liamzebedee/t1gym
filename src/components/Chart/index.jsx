@@ -1,6 +1,6 @@
 
 import * as d3 from "d3";
-import React, { useEffect, useRef, useState, useContext } from 'react';
+import React, { useEffect, useRef, useState, useContext, useCallback } from 'react';
 import { intervalSearch } from "../../pages/helpers";
 
 import { Duration, DateTime } from 'luxon'
@@ -104,6 +104,15 @@ export const Chart = (props) => {
     // The most ridiculously simple hack.
     const bglColorId = `bg-color-${uuidv4()}`
 
+    const bgLineStops = [
+        [0, 'red'],
+        [userProfile.targetRange.bgLow / 18., 'orange'],
+        [userProfile.targetRange.bgTargetBottom / 18., 'green'],
+        [userProfile.targetRange.bgTargetTop / 18., 'orange'],
+        [userProfile.targetRange.bgHigh / 18., 'red']
+    ]
+    
+
     const inRangeShapeDescription = {
         start: userProfile.targetRange.bgTargetBottom / 18.,
         end: userProfile.targetRange.bgTargetTop / 18.
@@ -166,16 +175,7 @@ export const Chart = (props) => {
                     x1={0}
                     x2={width}>
                     {data.map((d, i) => {
-                        function getStopColor(d) {
-                            return intervalSearch([
-                                [0, 'red'],
-                                [userProfile.targetRange.bgLow / 18., 'orange'],
-                                [userProfile.targetRange.bgTargetBottom / 18., 'green'],
-                                [userProfile.targetRange.bgTargetTop / 18., 'orange'],
-                                [userProfile.targetRange.bgHigh / 18., 'red']
-                            ], d.sgv)
-                        }
-                        return <stop key={i} offset={x(d.date) / width} stopColor={getStopColor(d)} />
+                        return <stop key={i} offset={x(d.date) / width} stopColor={intervalSearch(bgLineStops, d.sgv)} />
                     })}
                 </linearGradient>
 
