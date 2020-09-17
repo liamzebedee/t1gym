@@ -89,12 +89,16 @@ export const NewAnnotationControl = ({ startTime, endTime, onSave, onDiscard, st
             </Flex>
 
             <Flex flexDirection="row">
-                <span style={{ width: 150 }}>
+                <span style={{ width: 149 }}>
                     <b>Total Carbs</b>: <span className={styles.carbs}>{(stats.totalCarbs || 0).toFixed(0)}g</span>
                 </span>
                 <Box paddingRight="5"></Box>
-                <span style={{ width: 150 }}>
-                    <b>Total insulin</b>: <span className={styles.insulin}>{(stats.totalInsulin || 0).toFixed(1)}U</span>
+                <span style={{ width: 250 }}>
+                    <b>Bolus/correction insulin</b>: <span className={styles.insulin}>{(stats.totalInsulin || 0).toFixed(1)}U</span>
+                </span>
+                <Box paddingRight="5"></Box>
+                <span style={{ width: 200 }}>
+                    <b>Basal insulin</b>: <span className={styles.insulin}>{(stats.totalBasalInsulin || 0).toFixed(1)}U</span>
                 </span>
             </Flex>
 

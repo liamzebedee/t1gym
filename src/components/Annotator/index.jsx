@@ -1,5 +1,5 @@
 import { Box, Flex, Stack, Heading, Text, Tag, TagLabel } from "@chakra-ui/core";
-import { useRef, useState } from 'react';
+import { useRef, useState, useContext } from 'react';
 import * as _ from 'lodash'
 import { DateTime } from 'luxon'
 import { getStartOfDayForTime } from '../../pages/helpers';
@@ -8,6 +8,10 @@ import { Chart } from "../Chart";
 import styles from './styles.module.css'
 import { Table, TableRow, TableCell, TableHead, TableHeader, TableBody } from "../Table";
 import { useHoverPickSelector } from "../../misc/hooks";
+import { getBasalSeries } from "../../misc/basals";
+import * as d3 from "d3"
+import { NightscoutProfilesContext } from "../../misc/contexts";
+import { MINUTE } from "../../model";
 
 const Annotation = ({ startTime, endTime, tags, notes, active }) => {
     const start = DateTime.fromJSDate(startTime)
@@ -51,6 +55,9 @@ function isInsulinTreatment(treatment) {
 
 export const Annotator = (props) => {
     const { data, treatments, onAnnotation } = props
+    const extent = d3.extent(data, function (d) { return d.date })
+    const profiles = useContext(NightscoutProfilesContext)
+    const basalSeries = getBasalSeries(profiles, treatments.filter(event => event.eventType == 'Temp Basal'), extent[0], extent[1])
 
     const d3Container = useRef(null);
 
@@ -102,15 +109,22 @@ export const Annotator = (props) => {
                 .reduce((prev, curr) => prev + curr.carbs, 0)
             const totalInsulin = treatmentsWithinRange
                 .filter(isInsulinTreatment)
-                .map(x => (console.log(x), x))
                 .reduce((prev, curr) => prev + curr.insulin, 0)
+            
+            const filteredBasalSeries = basalSeries.filter(x => x.startTime >= startTime && x.startTime <= endTime)
+            const totalBasalInsulin = filteredBasalSeries.reduce((prev, curr) => {
+                // TODO: assuming here that the basal series is spaced apart in 5 minute intervals.
+                const delivered = curr.rate / (60 / 5)
+                return prev + delivered
+            }, 0)
 
             setStats({
                 startBG,
                 endBG,
                 deltaBG,
                 totalCarbs,
-                totalInsulin
+                totalInsulin,
+                totalBasalInsulin
             })
         }
 
@@ -190,9 +204,10 @@ export const Annotator = (props) => {
                 </Stack>
             </Flex>
 
-            <Flex flex="6" align="start" justify="start" mr={5}>
+            <Flex flex="6" align="start" justify="start" flexDirection='column' mr={5}>
                 <Chart 
                     data={data} 
+                    basalSeries={basalSeries}
                     onEndBrush={onEndBrush}
                     annotations={(previewedAnnotation != null) && [ _.find(annotations, { id: previewedAnnotation }) ]}
                     events={treatments}

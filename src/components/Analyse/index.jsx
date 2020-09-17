@@ -40,7 +40,7 @@ export const Analyse = () => {
 
         <NightscoutProfilesContext.Provider value={profiles}>
             {bgs && bgs.map((bgset, i) => {
-                return <div key={i}>
+                return <div key={bgset.from}>
                     <AnnotatorContainer 
                         data={convertData(bgset.data)}
                         treatments={bgset.treatments}/>

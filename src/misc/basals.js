@@ -107,19 +107,20 @@ export function getBasalSeries(profiles, treatments, fromDate, toDate) {
         
         if(!activeBasal) {
             const currentProfile = getCurrentProfile(profiles, i)
-            
-            let profileBasal = getActiveBasals(
-                currentProfile.store[currentProfile.defaultProfile].basal,
-                i, i + 5*MINUTE
-            ).pop()
-
-            activeBasal = {
-                rate: profileBasal.rate,
-                startTime: i
-            }
-            lastTreatment = {
-                duration: 5,
-                time: i
+            if(currentProfile) {
+                let profileBasal = getActiveBasals(
+                    currentProfile.store[currentProfile.defaultProfile].basal,
+                    i, i + 5*MINUTE
+                ).pop()
+    
+                activeBasal = {
+                    rate: profileBasal.rate,
+                    startTime: i
+                }
+                lastTreatment = {
+                    duration: 5,
+                    time: i
+                }
             }
         }
         
@@ -148,10 +149,9 @@ export function getBasalSeries(profiles, treatments, fromDate, toDate) {
  * @param {Array<NSProfile>} profiles 
  */
 export function getCurrentProfile(profiles, time) {
-    const s3 = _.sortBy(
+    return _.sortBy(
         profiles.filter(profile => profile.mills <= time), ['mills']
     ).pop()
-    return s3
 }
 
 /**
