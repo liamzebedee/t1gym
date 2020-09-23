@@ -111,19 +111,21 @@ export function getBasalSeries(profiles, treatments, fromDate, toDate) {
         
         if(!activeBasal) {
             const currentProfile = getCurrentProfile(profiles, i)
-            
-            let profileBasal = getActiveBasal(
-                currentProfile.store[currentProfile.defaultProfile].basal,
-                (i - startOfDayMs) / 1000
-            )
 
-            activeBasal = {
-                rate: profileBasal.rate,
-                startTime: i
-            }
-            lastTreatment = {
-                duration: 5,
-                time: i
+            if(currentProfile) {
+                let profileBasal = getActiveBasal(
+                    currentProfile.store[currentProfile.defaultProfile].basal,
+                    (i - startOfDayMs) / 1000
+                )
+
+                activeBasal = {
+                    rate: profileBasal.rate,
+                    startTime: i
+                }
+                lastTreatment = {
+                    duration: 5,
+                    time: i
+                }
             }
         }
         

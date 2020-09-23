@@ -10,34 +10,29 @@ import styles from './styles.module.css'
 import { functions, MINUTE, compose, SECOND } from "../../model";
 
 import { PROFILE } from '../../misc/constants'
-import { getBasalSeries } from "../../misc/basals";
 import { NightscoutProfilesContext } from "../../misc/contexts";
 
 export const Chart = (props) => {
-    let onEndBrush = props.onEndBrush || function () { }
-    const data = props.data
+    let onEndBrush = props.onEndBrush || identity
+    const data = _.sortBy(props.data, 'date')
 
     const annotations = props.annotations || []
     const events = props.events || []
+    const basalSeries = props.basalSeries || []
     const profiles = useContext(NightscoutProfilesContext)
     const userProfile = PROFILE
 
     // Layout.
     // 
-    
-    const tempBasalArea = {
-        height: 200,
-        marginTop: 50
+    const margin = {
+        top: 30,
+        bottom: 30,
+        left: 40,
+        right: 40
     }
 
-    let margin = { top: 1, right: 30, bottom: 30, left: 60 }
-    
-    let width = 1200
-    let height = 400
-    
-    if(!props.showTempBasalChart) {
-        height += tempBasalArea.height
-    }
+    const width = 1200
+    const height = 400
 
 
     // 
@@ -61,25 +56,23 @@ export const Chart = (props) => {
 
     const x = d3.scaleTime()
         .domain(calcExtent(extent, props.dynamicExtent))
-        .range([0, width])
+        .range([margin.left, width - margin.right])
         .clamp(true)
 
     const y = d3.scaleLinear()
         .domain([0, 23])
-        .range([height, 0])
+        .range([height - margin.bottom, margin.top])
 
 
-    const axisRef = el => {
-        el && d3.select(el).call(
-            d3.axisLeft(y)
-        )
+    const yAxisRef = el => {
+        const yAxis = d3.axisLeft(y)
+        d3.select(el).call(yAxis)
     }
 
-
-    let flip = false
-    const axisRef2 = el => {
+    const xAxisRef = el => {
         let yAxis = d3.axisBottom(x)
         if (!props.dynamicExtent) {
+            let flip = false
             yAxis = yAxis
                 .ticks(d3.timeMinute.every(120))
                 .tickFormat(x => {
@@ -123,7 +116,10 @@ export const Chart = (props) => {
         // Add brushing
         d3.select(el)
             .call(d3.brushX()
-                .extent([[0, 0], [width, height]])
+                .extent(
+                    [[0 + margin.left, 0 + margin.top], 
+                    [width - margin.right, height - margin.top]
+                ])
                 .on("end", function () {
                     let extent = d3.event.selection
                     if (extent != null) {
@@ -134,7 +130,6 @@ export const Chart = (props) => {
                 })
             )
     }
-
 
     const yIdx = d3.bisector(d => d.date).right
 
@@ -155,17 +150,23 @@ export const Chart = (props) => {
         else return data[yi - 1]
     }
         
-    return <>
-    <svg
-        // width={'100%'} height={'100%'}
-        viewBox={`0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom + tempBasalArea.height + tempBasalArea.marginTop}`}
-        className={styles.chart}>
-        <g transform={`translate(${margin.left}, ${margin.top})`}>
+    return <div className={styles.chart}>
+        <svg className={styles.bgChart} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio={0}>
             {/* Axes. */}
-            <g ref={axisRef}>
+            <g ref={xAxisRef} transform={`translate(0, ${height - margin.bottom})`}>
             </g>
-            <g ref={axisRef2} transform={"translate(0," + height + ")"}>
+
+            <g ref={yAxisRef} transform={`translate(${margin.left}, 0)`}>
             </g>
+
+            {/* In range box. */}
+            <rect
+                x={margin.left}
+                y={y(inRangeShapeDescription.end)}
+                width={width - margin.right - margin.left}
+                height={y(inRangeShapeDescription.start) - y(inRangeShapeDescription.end)}
+                stroke='gray'
+                fill='#7fff7f30' />
 
             <g ref={svgRef}>
                 {/* Line */}
@@ -283,7 +284,6 @@ export const Chart = (props) => {
                     if(!carbs) return
 
                     const date = new Date(event.created_at)
-                    if(date < extent[0]) return // TODO(liamz): quick hack to work around out-of-date-range events.
                     const CARB_SCALE_FACTOR = 3
                     const height = carbs * CARB_SCALE_FACTOR
 
@@ -311,7 +311,6 @@ export const Chart = (props) => {
                     if(!insulin) return
 
                     const date = new Date(event.created_at)
-                    if(date < extent[0]) return // TODO(liamz): quick hack to work around out-of-date-range events.
                     const INSULIN_SCALE_FACTOR = 15
                     const height = insulin * INSULIN_SCALE_FACTOR
 
@@ -324,169 +323,72 @@ export const Chart = (props) => {
                     </g>
                 })}
 
-
-                {/* In range box. */}
-                <rect
-                    x={0}
-                    y={y(inRangeShapeDescription.end)}
-                    width={width}
-                    height={y(inRangeShapeDescription.start) - y(inRangeShapeDescription.end)}
-                    stroke='black'
-                    fill='#7fff7f30' />
             </g>
-        </g>
-        
+        </svg>
+
         {props.showTempBasalChart &&
-        <g transform={`translate(${margin.left}, ${margin.top + height + tempBasalArea.marginTop})`}>
             <TempBasalChart
-                height={tempBasalArea.height}
-                width={width}
                 extent={calcExtent(extent)}
-                basalSeries={getBasalSeries(profiles, events.filter(event => event.eventType == 'Temp Basal'), extent[0], extent[1])}
-                />
-        </g> }
-    </svg>
-    </>
+                basalSeries={basalSeries}
+            />
+        }
+    </div>
 }
 
+import { identity } from 'lodash'
 
-export const TempBasalChart = ({ height = 200, width, extent, basalSeries }) => {
+export const TempBasalChart = ({ width = 1200, height = 300, extent, basalSeries, onEndBrush = identity, bgBrushExtent = null }) => {
+    // Following the D3.js margin convention, mentioned here [1].
+    // [1]: https://observablehq.com/@d3/margin-convention
+    const margin = {
+        top: 30,
+        bottom: 30,
+        left: 40,
+        right: 40
+    }
+
     const x = d3.scaleTime()
         .domain(extent)
-        .range([0, width])
-        // .clamp(true)
+        .range([margin.left, width - margin.right])
 
+    const xAxisRef = el => {
+        let xAxis = d3.axisBottom(x).ticks(5)
+        d3.select(el).call(xAxis)
+    }
+    
     const MAX_TEMP_BASAL_UNITS = 6
     const y = d3.scaleLinear()
         .domain([0, MAX_TEMP_BASAL_UNITS])
-        .range([height, 0])
+        .range([height - margin.bottom, margin.top])
+        // .range([height - margin.bottom, margin.top])
         // We clamp the range, as I've noticed Loop has erroneously recorded
         // a temp basal much above the user-defined safety limits. The basal was
         // 35U for 2mins or so. Clamping is a simple sanity check for this
         // behaviour, as it is usually replaced by a reasonable temp.
         .clamp(true)
 
-
-    const xAxisRef = el => {
-        el && d3.select(el).call(
-            d3.axisLeft(y)
-        )
-    }
-
-    let flip = false
     const yAxisRef = el => {
-        let yAxis = d3.axisBottom(x).ticks(5)
+        let yAxis = d3.axisLeft(y)
         d3.select(el).call(yAxis)
     }
 
     const area = d3.area()
         .x(d => x(d.startTime))
-        .y0(height)
+        .y0(height - margin.bottom)
         .y1(d => y(d.rate))
         // .defined(d => d.rate !== 0)
         .curve(d3.curveStep)
 
-    return <g transform='translate(0,00)'>
+    return <svg className={styles.tempBasalChart} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio={0}>
         {/* Axes. */}
-        <g ref={xAxisRef}>
+        <g ref={xAxisRef} transform={`translate(0, ${height - margin.bottom})`}>
         </g>
-        <g ref={yAxisRef} transform={`translate(0, ${height})`}>
+
+        <g ref={yAxisRef} transform={`translate(${margin.left}, 0)`}>
         </g>
 
         <path
             d={area(basalSeries)}
             class={styles.tempBasal}/>
-    </g>
+    </svg>
 }
-
-
-// Treatment schema.
-// 
-/*
-    {
-        "_id": "5f1904678b6aca48aaf74218",
-        "timestamp": "2020-07-22T01:53:48Z",
-        "insulin": 1.2,
-        "created_at": "2020-07-22T01:53:48.000Z",
-        "unabsorbed": 0,
-        "type": "normal",
-        "enteredBy": "loop://Liam Edwards-Playne’s iPhone",
-        "eventType": "Correction Bolus",
-        "duration": 0.8,
-        "programmed": 1.2,
-        "utcOffset": 0
-    }
-
-    {
-        "_id": "5f1afb118b6aca48aa123400",
-        "duration": 0,
-        "bolus": {
-        "timestamp": "2020-07-22T00:01:59+10:00",
-        "_type": "Bolus",
-        "id": "AVJSAHvBQBYU",
-        "amount": 8.2,
-        "programmed": 8.2,
-        "unabsorbed": 0,
-        "duration": 0
-        },
-        "timestamp": "2020-07-22T00:01:59+10:00",
-        "created_at": "2020-07-21T14:01:59.000Z",
-        "carbs": 82,
-        "ratio": "10",
-        "wizard": {
-            "timestamp": "2020-07-22T00:01:59+10:00",
-            "_type": "BolusWizard",
-            "id": "WwB7wQAWFFKQChlBAFIAAAAAUkE=",
-            "carb_input": 82,
-            "carb_ratio": 10,
-            "correction_estimate": 0,
-            "food_estimate": 8.2,
-            "unabsorbed_insulin_total": 0,
-            "bolus_estimate": 8.2,
-            "bg": 0,
-            "bg_target_low": 6.5,
-            "bg_target_high": 6.5,
-            "sensitivity": 2.5,
-            "units": "mmol"
-        },
-        "eventType": "Meal Bolus",
-        "insulin": 8.2,
-        "notes": "Normal bolus with wizard.\nCalculated IOB: -0.203\nProgrammed bolus 8.2\nDelivered bolus 8.2\nPercent delivered:  100%\nFood estimate 8.2\nCorrection estimate 0\nBolus estimate 8.2\nTarget low 6.5\nTarget high 6.5\nHypothetical glucose delta -20.5",
-        "medtronic": "mm://openaps/mm-format-ns-treatments/Meal Bolus",
-        "enteredBy": "openaps://medtronic/722",
-        "utcOffset": 600
-    }
-
-
-
-    {
- "_id": "5f1610b68b6aca48aacec0ec",
- "duration": 30,
- "raw_duration": {
-  "timestamp": "2020-07-21T07:44:22+10:00",
-  "_type": "TempBasalDuration",
-  "id": "FgFW7AdVFA==",
-  "duration (min)": 30
- },
- "timestamp": "2020-07-21T07:44:22+10:00",
- "absolute": 1.35,
- "rate": 1.35,
- "raw_rate": {
-  "timestamp": "2020-07-21T07:44:22+10:00",
-  "_type": "TempBasal",
-  "id": "MzZW7AdVFAA=",
-  "temp": "absolute",
-  "rate": 1.35
- },
- "eventType": "Temp Basal",
- "medtronic": "mm://openaps/mm-format-ns-treatments/Temp Basal",
- "created_at": "2020-07-20T21:44:22.000Z",
- "enteredBy": "openaps://medtronic/722",
- "utcOffset": 600,
- "carbs": null,
- "insulin": null
-}
-    */
-
-
-    
