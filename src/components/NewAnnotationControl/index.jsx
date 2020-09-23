@@ -1,9 +1,9 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Stack, FormControl, FormLabel, Textarea, Button, Heading, Flex, Box } from "@chakra-ui/core"
-import DateTime from 'react-datetime'
 import { TagsEditor } from '../TagsEditor'
 import { useEffect } from "react"
 import styles from './styles.module.css'
+import { DateTime } from 'luxon'
 
 function useEditKey() {
     const [editKey, setEditKey] = useState(0)
@@ -58,31 +58,25 @@ export const NewAnnotationControl = ({ startTime, endTime, onSave, onDiscard, st
         onDiscard()
     }
 
+    const startTimeDT = useMemo(() => 
+        DateTime.fromJSDate(startTime).toFormat('t'), 
+        [startTime]
+    )
+    const endTimeDT = useMemo(() => 
+        DateTime.fromJSDate(endTime).toFormat('t'), 
+        [endTime]
+    )
+
     return <div>
         <Stack shouldWrapChildren>
 
             <Flex flexDirection="row">
-                <FormControl>
-                    <FormLabel htmlFor="start-time">Start time</FormLabel>
-                    <DateTime
-                        inputProps={{ disabled: true }}
-                        dateFormat={false}
-                        name="start-time"
-                        value={startTime} />
-                </FormControl>
+                <span style={{ width: 150 }}><b>Start time</b><br/> {startTimeDT}</span>
                 <span><b>BGL</b><br/> {(stats.startBG || 0).toFixed(1)}mmol</span>
             </Flex>
 
             <Flex flexDirection="row">
-                <FormControl>
-                    <FormLabel htmlFor="end-time">End time</FormLabel>
-                    <DateTime
-                        inputProps={{ disabled: true }}
-                        dateFormat={false}
-                        name="end-time"
-                        value={endTime} />
-                </FormControl>
-
+                <span style={{ width: 150 }}><b>End time</b><br/> {endTimeDT}</span>
                 <span style={{ width: 150 }}><b>BGL</b><br/> {(stats.endBG || 0).toFixed(1)}mmol</span>
                 <Box paddingRight="5"></Box>
                 <span style={{ width: 150 }}><b>Δ BGL</b><br/> {(stats.deltaBG || 0) > 0 ? '+' : ''}{(stats.deltaBG || 0).toFixed(1)}mmol</span>
