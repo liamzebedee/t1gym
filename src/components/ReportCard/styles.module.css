@@ -38,11 +38,12 @@
 }
 
 .pgsLabel {
-    stroke: #332c2cbf;
+    fill: #272525;
+    font-weight: 400;
 }
 
 .dateLabel {
-    stroke: #afafaf;
+    fill: #292929;
 }
 
 @keyframes pulsating-skeleton2 {
