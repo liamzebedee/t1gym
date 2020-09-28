@@ -1,14 +1,14 @@
-import { Box, Flex, Stack, Heading, Text, Tag, TagLabel } from "@chakra-ui/core";
-import { useRef, useState, useContext } from 'react';
+import { Box, Flex, Stack, Heading, Text, Tag, TagLabel, Button, Textarea, FormControl, FormLabel } from "@chakra-ui/core";
+import { useRef, useState, useContext, useEffect } from 'react';
 import * as _ from 'lodash'
-import { DateTime } from 'luxon'
+import { DateTime, Duration } from 'luxon'
 import { getStartOfDayForTime } from '../../pages/helpers';
 import { NewAnnotationControl } from '../NewAnnotationControl';
 import { Chart } from "../Chart";
 import styles from './styles.module.css'
 import { Table, TableRow, TableCell, TableHead, TableHeader, TableBody } from "../Table";
 import { useHoverPickSelector } from "../../misc/hooks";
-import { getBasalSeries } from "../../misc/basals";
+import { getBasalSeries, getCurrentProfile } from "../../misc/basals";
 import * as d3 from "d3"
 import { NightscoutProfilesContext } from "../../misc/contexts";
 import { MINUTE } from "../../model";
@@ -53,6 +53,89 @@ function isInsulinTreatment(treatment) {
         || treatment.eventType == 'Correction Bolus'
 }
 
+export const SimulateSettingsPane = ({ treatments, profiles, data }) => {
+    const [show, setShow] = useState(false)
+
+    const [settings, setSettings] = useState({
+        events: '',
+        bolusRatios: '',
+        correctionRatios: ''
+    })
+    useEffect(() => {
+        if(show) {
+            const startOfDay = getStartOfDayForTime(treatments[0].created_at)
+
+            // 1) Events.
+            // 
+            const treatmentText = treatments
+            .filter(treatment => {
+                return treatment.eventType == 'Correction Bolus' || treatment.eventType == 'Meal Bolus'
+            })
+            .map(treatment => {
+                // Convert time to relative time from start of day.
+                const createdAt = DateTime.fromJSDate(new Date(treatment.created_at))
+                const relativeTime = createdAt.diff(startOfDay)
+                    .toFormat('hh.mm')
+                const amount = treatment.insulin
+
+                return `${relativeTime} insulin ${amount}`
+            })
+            .join('\n')
+            const beginHeader = `${startOfDay.toFormat('dd/MM/yyyy')} begin`
+            const events = `${beginHeader}\n${treatmentText}`
+
+
+            // 2) Bolus and correction ratios.
+
+            // Get the most recent profile, that'll do.
+            const currentProfile = getCurrentProfile(profiles, startOfDay.toMillis())
+            const profile = currentProfile.store[currentProfile.defaultProfile]
+
+            const makeRatios = (ratioLike, valueUnit = '') => ratioLike.map(({ time, value }) => {
+                return `${time.replace(':', '.')} ${value}${valueUnit}`
+            }).join('\n')
+
+            const bolusRatios = makeRatios(profile.carbratio, 'g')
+            const correctionRatios = makeRatios(profile.sens, '')
+            
+            setSettings({
+                events,
+                bolusRatios,
+                correctionRatios,
+                data: JSON.stringify(data.map(d => {
+                    return {
+                        ...d,
+                        sgv: d.sgv * 18.
+                    }
+                }))
+            })
+        }
+    }, [show, treatments, profiles, data])
+
+    return <>
+        <Button onClick={() => setShow(!show)}>Simulate</Button>
+
+        {show &&
+            [
+                ["Events", 'events'],
+                ["Bolus ratios", 'bolusRatios'],
+                ['Correction ratios', 'correctionRatios'],
+                ['Data', 'data']
+            ].map(item => {
+                const [title, dataKey] = item
+                return <FormControl>
+                    <FormLabel>{title}</FormLabel>
+                    <Textarea
+                        height={120}
+                        defaultValue={settings[dataKey]}
+                        size="md"
+                    />
+                </FormControl>
+            })
+        }
+    </>
+}
+
 export const Annotator = (props) => {
     const { data, treatments, onAnnotation } = props
     const extent = d3.extent(data, function (d) { return d.date })
@@ -62,6 +145,7 @@ export const Annotator = (props) => {
     const d3Container = useRef(null);
 
     const [brush, setBrush] = useState(null)
+    const [filteredView, setFilteredView] = useState({})
     const [stats, setStats] = useState({
         startBG: null,
         endBG: null,
@@ -126,6 +210,10 @@ export const Annotator = (props) => {
                 totalInsulin,
                 totalBasalInsulin
             })
+            setFilteredView({
+                data: annotationData,
+                treatments: treatmentsWithinRange
+            })
         }
 
 
@@ -181,6 +269,10 @@ export const Annotator = (props) => {
                         </Table>
                     </Box>
                     
+                    {(function() {
+                        if(brush == null) return
+                        return <SimulateSettingsPane treatments={filteredView.treatments} profiles={profiles} data={filteredView.data}/>
+                    })()}
                     <Box p={2} shadow="xs" borderWidth="1px">
                         {function(){
                             if(brush == null) return <b>Highlight your chart to add notes</b>

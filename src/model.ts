@@ -94,6 +94,99 @@ export let fiaspInsulinModel = `
         })
     )
  */
+
+
+// iobCalc returns two variables:
+    //   activityContrib = units of treatment.insulin used in previous minute
+    //   iobContrib = units of treatment.insulin still remaining at a given point in time
+function iobCalcExponential(insulin, minsAgo, dia, profile) {
+    let peak = 55
+
+    if ( profile.curve === "ultra-rapid" ) {
+        if (profile.useCustomPeakTime === true && profile.insulinPeakTime !== undefined) {
+            if ( profile.insulinPeakTime > 100 ) {
+                console.error('Setting maximum Insulin Peak Time of 100m for',profile.curve,'insulin');
+                peak = 100;
+            } else if ( profile.insulinPeakTime < 35 ) {
+                console.error('Setting minimum Insulin Peak Time of 35m for',profile.curve,'insulin');
+                peak = 35;
+            } else {
+                peak = profile.insulinPeakTime;
+            }
+        } else {
+            peak = 55;
+        }
+    } else {
+        console.error('Curve of',profile.curve,'is not supported.');
+    }
+    var end = dia * 60;  // end of insulin activity, in minutes
+
+
+    var activityContrib = 0;  
+    var iobContrib = 0;       
+
+    if (minsAgo < end) {
+        
+        // Formula source: https://github.com/LoopKit/Loop/issues/388#issuecomment-317938473
+        // Mapping of original source variable names to those used here:
+        //   td = end
+        //   tp = peak
+        //   t  = minsAgo
+        var tau = peak * (1 - peak / end) / (1 - 2 * peak / end);  // time constant of exponential decay
+        var a = 2 * tau / end;                                     // rise time factor
+        var S = 1 / (1 - a + (1 + a) * Math.exp(-end / tau));      // auxiliary scale factor
+        
+        // activityContrib = insulin * (S / Math.pow(tau, 2)) * minsAgo * (1 - minsAgo / end) * Math.exp(-minsAgo / tau);
+        iobContrib = insulin * (1 - S * (1 - a) * ((Math.pow(minsAgo, 2) / (tau * end * (1 - a)) - minsAgo / tau - 1) * Math.exp(-minsAgo / tau) + 1));
+    }
+
+    return iobContrib
+
+    // return {
+    //     activityContrib: activityContrib,
+    //     iobContrib: iobContrib        
+    // };
+}
+
+function nsCalculateFiaspInsulinActive(amount, t) {
+    const minsAgo = t / MINUTE
+    
+    // Force minimum of 5 hour DIA when default requires a Long DIA.
+    const dia = 5
+
+    // var curveDefaults = {
+    //     'bilinear': {
+    //         requireLongDia: false,
+    //         peak: 75 // not really used, but prevents having to check later
+    //     },
+    //     'rapid-acting': {
+    //         requireLongDia: true,
+    //         peak: 75,
+    //         tdMin: 300
+    //     },
+    //     'ultra-rapid': {
+    //         requireLongDia: true,
+    //         peak: 55,
+    //         tdMin: 300
+    //     },
+    // };
+    // const curve = curveDefaults['ultra-rapid']
+
+    const profile = {
+        curve: 'ultra-rapid',
+        insulinPeakTime: 55,
+        useCustomPeakTime: true
+    }
+
+
+    return iobCalcExponential(
+        amount,
+        minsAgo,
+        dia,
+        profile
+    )
+}
+
 export const functions = {
     exercise(intensity) {
         return u => 
@@ -105,13 +198,15 @@ export const functions = {
         return u => {
             // Scale u by slowness
             // TODO: testing ideas.
-            const u1 = u / 0.9
-            const y = linear(
-                [u1 / HOUR],
-                fiaspInsulinModel.map(a => a[0]),
-                fiaspInsulinModel.map(a => a[1])
-            )
-            const delivered = (y[0] / 100) * amount
+            // const u1 = u * 1.1
+            // const y = linear(
+            //     [u1 / HOUR],
+            //     fiaspInsulinModel.map(a => a[0]),
+            //     fiaspInsulinModel.map(a => a[1])
+            // )
+            // const delivered = (y[0] / 100) * amount
+            const delivered = amount - nsCalculateFiaspInsulinActive(amount, u)
+
             // console.log(`amount:${amount}`, `delivered:${Math.min(delivered, amount)}`, `hours:${u / HOUR}`)
             return Math.min(delivered, amount)
         }

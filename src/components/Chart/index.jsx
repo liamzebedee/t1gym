@@ -12,6 +12,87 @@ import { functions, MINUTE, compose, SECOND } from "../../model";
 import { PROFILE } from '../../misc/constants'
 import { NightscoutProfilesContext } from "../../misc/contexts";
 
+function calcStats(treatments, extent, data, basalSeries) {
+    let fns = []
+    
+    const insulinOnBoard = (amount, startTime) => {
+        const insulinActive = functions.fiaspInsulinActive(amount)
+        return u => {
+            const tickerFn = functions.beginsAfter({ start: startTime })
+            const ticker = tickerFn(u)
+            if(ticker === 0) return 0
+            return amount - insulinActive(ticker)
+        }
+    }
+
+    const treatmentsSortedByDate = _.sortBy(
+        treatments.map(treatment => {
+            return {
+                ...treatment,
+                startTime: +new Date(treatment.timestamp)
+            }
+        }), 
+        'startTime'
+    )
+    
+    const insulinTreatments = treatmentsSortedByDate
+        .filter(event => {
+            switch(event.eventType) {
+                case 'Meal Bolus':
+                    // Some Meal Boluses don't have insulin.
+                    if(!event.insulin) return false
+                // case 'Temp Basal':
+                case 'Correction Bolus':
+                    return true
+                default:
+                    return false
+            }
+        })
+
+    const basalFns = basalSeries
+        .filter(basalEntry => !basalEntry.profileRate.isActive) // only include the temp basal treatments. default basals aren't that helpful informatically (assuming they're correct).
+        .map(basalEntry => {
+            const deltaProfileRate = basalEntry.rate - basalEntry.profileRate.rate
+            return {
+                ...basalEntry,
+                deltaProfileRate
+            }
+        })
+        .filter(basalEntry => basalEntry.deltaProfileRate >= 0)
+        .map(basalEntry => {
+            const amount = basalEntry.deltaProfileRate / (60 / 5)
+            return insulinOnBoard(amount, basalEntry.startTime)
+        })
+
+    const insulinFns = insulinTreatments
+        .map(treatment => {
+            const amount = treatment.insulin
+            return insulinOnBoard(amount, treatment.startTime)
+        })
+        .concat(basalFns)
+    
+    let iobs = []
+
+    // Generate a stream of IOB entries.
+    // Instead of iterating on a fixed timestep [1], as it is done in basals.js,
+    // we iterate on the timestep of the BG readings. 
+    // This approach renders nicer-looking graphs on top of the BG line,
+    // as if the timestep is even a second out-of-sync, the colours run into
+    // each other and become visually jarring.
+    // [1]: ie.  `for(let date = extent[0]; date <= extent[1]; date += 3*MINUTE) {`
+    for(let datum of data) {
+        const { date } = datum
+        const iob = insulinFns.map(f => f(date)).reduce((prev, curr) => prev + curr, 0)
+
+        iobs.push({
+            iob,
+            date
+        })
+    }
+
+    return iobs
+}
+
 export const Chart = (props) => {
     let onEndBrush = props.onEndBrush || identity
     const data = _.sortBy(props.data, 'date')
@@ -143,13 +224,32 @@ export const Chart = (props) => {
                     return false
             }
         })
+    
+    const iobData = calcStats(events, extent, data, basalSeries)
 
     function bgY(date) {
         const yi = yIdx(data, date)
         if(yi === 0) return data[yi]
         else return data[yi - 1]
     }
-        
+    
+    // Show insulin 
+    const IOB_Y_SCALE_FACTOR = 2.1
+
+    var iobAreaLine = d3.area()
+        .curve(d3.curveBasis)
+        .x(function(d) { return x(d.date) })
+        .y1(function (d) { 
+            const y1 = bgY(d.date).sgv
+            const yIOB = d.iob * IOB_Y_SCALE_FACTOR
+            return y(y1 + yIOB)
+        })
+        .y0(function (d) { 
+            const y1 = bgY(d.date).sgv
+            return y(y1)
+        })
+        .defined(d => d.iob > 0.1)
+    
     return <div className={styles.chart}>
         <svg className={styles.bgChart} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio={0}>
             {/* Axes. */}
@@ -169,6 +269,7 @@ export const Chart = (props) => {
                 fill='#7fff7f30' />
 
             <g ref={svgRef}>
+                
                 {/* Line */}
                 <linearGradient
                     id={bglColorId}
@@ -190,6 +291,13 @@ export const Chart = (props) => {
                 strokeWidth={1}
                 /> */}
 
+                {/* IOB Area chart. */}
+                <path
+                    d={iobAreaLine(iobData)}
+                    fill="rgba(0,128,255,0.2)"
+                    stroke={`rgba(0,128,255,0.5)`}
+                    strokeWidth={2} />
+                
                 {/* Coloured BG line for real data. */}
                 <path
                     // d={bgLine( data.filter(bgLine.defined()) )}

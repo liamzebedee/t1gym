@@ -70,6 +70,7 @@
  * @typedef {Object} BasalSeriesEntry
  * @property {number} rate
  * @property {number} startTime
+ * @property {boolean} isProfileBasal
  */
 
 import _ from 'lodash'
@@ -120,7 +121,11 @@ export function getBasalSeries(profiles, treatments, fromDate, toDate) {
 
                 activeBasal = {
                     rate: profileBasal.rate,
-                    startTime: i
+                    profileRate: {
+                        rate: profileBasal.rate,
+                        isActive: true
+                    },
+                    startTime: i,
                 }
                 lastTreatment = {
                     duration: 5,
@@ -134,9 +139,20 @@ export function getBasalSeries(profiles, treatments, fromDate, toDate) {
         
         if(latestTreatment) {
             lastTreatment = latestTreatment
+
+            const currentProfile = getCurrentProfile(profiles, i)
+            let profileBasal = getActiveBasals(
+                currentProfile.store[currentProfile.defaultProfile].basal,
+                i, i + 5*MINUTE
+            ).pop()
+
             activeBasal = {
                 rate: latestTreatment.rate,
-                startTime: latestTreatment.time
+                startTime: latestTreatment.time,
+                profileRate: {
+                    rate: profileBasal.rate,
+                    isActive: false
+                },
             }
         }
         
