@@ -1,14 +1,14 @@
 import { Box, Heading, CircularProgress } from "@chakra-ui/core"
 import { convertData, usePromiseLoadingState } from "../../pages/helpers"
-import { AnnotatorContainer } from "../Annotator/Container"
 import { useState, useEffect } from "react"
 import queryString from 'query-string'
 import { tz } from "../../misc/wrappers"
 import { Icon, Text } from "@chakra-ui/core";
 import { NightscoutProfilesContext } from "../../misc/contexts"
 import * as _ from 'lodash'
+import { LogbookEntryContainer } from "../LogbookEntry/Container"
 
-export const Analyse = () => {
+export const Logbook = () => {
     const [bgs, setBgs] = useState(null)
     const [profiles, setProfiles] = useState(null)
     const [getBGData, loadingBGData] = usePromiseLoadingState(getBGData_)
@@ -42,7 +42,7 @@ export const Analyse = () => {
         <NightscoutProfilesContext.Provider value={profiles}>
             {bgs && bgs.map((bgset, i) => {
                 return <div key={bgset.from}>
-                    <AnnotatorContainer 
+                    <LogbookEntryContainer 
                         data={convertData(bgset.data)}
                         treatments={bgset.treatments}/>
                 </div>

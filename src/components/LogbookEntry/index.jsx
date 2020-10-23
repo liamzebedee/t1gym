@@ -23,7 +23,7 @@ function isInsulinTreatment(treatment) {
         || treatment.eventType == 'Correction Bolus'
 }
 
-export const Annotator = (props) => {
+export const LogbookEntry = (props) => {
     const { data, treatments, onAnnotation } = props
     const extent = d3.extent(data, function (d) { return d.date })
     const profiles = useContext(NightscoutProfilesContext)
