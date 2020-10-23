@@ -59,9 +59,26 @@ export const ReportCard = ({ userProfile = PROFILE }) => {
     const [previewedDay, selectedDay, hoveredDay, onHoverDay, onSelectDay] = useHoverPickSelector()
 
     async function load() {
+        const today = DateTime.local()
+        const DAYS_TO_RETRIEVE = 7*5 // 5 weeks
+        let toDate = today
+        let fromDate = toDate
+            .minus({ days: DAYS_TO_RETRIEVE-1 })
+            .set({
+                hour: 0,
+                minute: 0,
+                second: 0,
+                millisecond: 0
+            })
+        toDate = toDate.toMillis()
+        fromDate = fromDate.toMillis()
+        
         const params = {
-            tz
+            tz,
+            fromDate,
+            toDate
         }
+        
         const longitudalData = await fetch(`/api/bgs/longitudal?${queryString.stringify(params)}`).then(res => res.json())
 
         const statistics = calcStats(longitudalData, userProfile)
