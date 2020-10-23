@@ -89,6 +89,14 @@ export const ReportCard = ({ userProfile = PROFILE }) => {
             return <Chart data={convertData(day.data)} />
         }
     }
+    
+    function goBackInProgressReport() {
+        
+    }
+    
+    function goForwardInProgressReport() {
+        
+    }
 
     return <>
         <p>Your target range is {(userProfile.targetRange.bgTargetBottom / 18.).toFixed(1)} - {(userProfile.targetRange.bgTargetTop / 18.).toFixed(1)} mmol/L.</p>
@@ -124,7 +132,17 @@ export const ReportCard = ({ userProfile = PROFILE }) => {
         <StatGroup>
             <Stat>
                 <StatLabel>
-                    <Heading size="lg" pb={5} pt={5}>30 Day Progress Report</Heading>
+                    <Heading size="lg" pb={5} pt={5}>
+                        30 Day Progress Report{' '}
+                        
+                        <ButtonGroup>
+                            <IconButton icon="arrow-left" onClick={goBackInProgressReport}>
+                            </IconButton>
+                            <IconButton icon="arrow-right" onClick={goForwardInProgressReport}>
+                            </IconButton>
+                        </ButtonGroup>
+                    
+                    </Heading>
                 </StatLabel>
             </Stat>
         </StatGroup>
