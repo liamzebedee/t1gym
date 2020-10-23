@@ -63,12 +63,43 @@ const Blip = ({ pgs }) => {
     </svg>
 }
 
+async function fetchData(fromDate, toDate, userProfile) {
+
+    const params = {
+        tz,
+        fromDate,
+        toDate
+    }
+
+    const longitudalData = await fetch(`/api/bgs/longitudal?${queryString.stringify(params)}`).then(res => res.json())
+
+    let statistics
+    if(longitudalData.length > 0) {
+        statistics = calcStats(longitudalData, userProfile)
+    } else {
+        statistics = {
+            PGS: null,
+            hba1c: null
+        }
+    }
+
+    let data = []
+    let days = dataToDayByDay(longitudalData)
+    data = 
+        days.map(({ day, data }) => {
+            const stats = calcStats(data, userProfile)
+            return { day, data, stats }
+        })
+    return { data, statistics }
+}
+
 import { PROFILE } from '../../misc/constants'
 import { ProgressCalendar } from './ProgressCalendar';
 import { color } from './helpers';
 
 export const ReportCard = ({ userProfile = PROFILE }) => {
-    let [data, setData] = useState(null)
+    const [data, setData] = useState([])
+    const [loading, setLoading] = useState(false)
     let [statistics, setStatistics] = useState({
         PGS: null,
         hba1c: null
@@ -76,26 +107,12 @@ export const ReportCard = ({ userProfile = PROFILE }) => {
     const [previewedDay, selectedDay, hoveredDay, onHoverDay, onSelectDay] = useHoverPickSelector()
 
     async function load(fromDate, toDate) {
-        const params = {
-            tz,
-            fromDate,
-            toDate
-        }
+        setLoading(true)
 
-        const longitudalData = await fetch(`/api/bgs/longitudal?${queryString.stringify(params)}`).then(res => res.json())
-
-        const statistics = calcStats(longitudalData, userProfile)
-
-        let data = []
-        let days = dataToDayByDay(longitudalData)
-        data = 
-            days.map(({ day, data }) => {
-                const stats = calcStats(data, userProfile)
-                return { day, data, stats }
-            })
-        
-        setData(data)
-        setStatistics(statistics)
+        const res = await fetchData(fromDate, toDate, userProfile)
+        setData(data.concat(res.data))
+        setStatistics(res.statistics)
+        setLoading(false)
     }
 
 
@@ -122,7 +139,11 @@ export const ReportCard = ({ userProfile = PROFILE }) => {
     }
     
     function goForwardInProgressReport() {
-        
+        const d = progressReportCursor.toDate - progressReportCursor.fromDate
+        setProgressReportCursor({
+            fromDate: progressReportCursor.fromDate + d,
+            toDate: progressReportCursor.toDate + d,
+        })
     }
 
 
@@ -152,7 +173,7 @@ export const ReportCard = ({ userProfile = PROFILE }) => {
             <Stat>
                 <StatLabel>
                     <Heading size="lg" pb={5} pt={5}>
-                        30 Day Progress Report{' '}
+                        Progress Calendar{' '}
                         
                         <ButtonGroup>
                             <IconButton icon="arrow-left" onClick={goBackInProgressReport}>
@@ -172,8 +193,9 @@ export const ReportCard = ({ userProfile = PROFILE }) => {
             </div>} */}
 
             <ProgressCalendar   
-                loading={data === null}
+                loading={loading}
                 data={data}
+                referenceEndDate={progressReportCursor.toDate}
                 {...{
                     previewedDay, selectedDay, hoveredDay, onHoverDay, onSelectDay
                 }}/>

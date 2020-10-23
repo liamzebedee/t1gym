@@ -14,7 +14,7 @@ import React from 'react';
 import { color } from './helpers';
 import { HOUR } from '../../model';
 
-export const ProgressCalendar = ({ loading, data, previewedDay, selectedDay, hoveredDay, onHoverDay, onSelectDay }) => {
+export const ProgressCalendar = ({ loading, data, previewedDay, selectedDay, hoveredDay, onHoverDay, onSelectDay, referenceEndDate }) => {
     const margin = {
         top: 0,
         left: 0
@@ -33,6 +33,15 @@ export const ProgressCalendar = ({ loading, data, previewedDay, selectedDay, hov
         fromDate: null,
         toDate: null
     }
+
+    const lastDayOfData = DateTime.fromMillis(referenceEndDate)
+        .set({
+            hour: 0,
+            minute: 0,
+            second: 0,
+            millisecond: 0
+        })
+
     const today = DateTime
         .local()
         .set({
@@ -45,7 +54,7 @@ export const ProgressCalendar = ({ loading, data, previewedDay, selectedDay, hov
     // We show a fixed-width layout, with weeks beginning on Monday and ending on Sunday.
     // fromDate should thus be a Monday, and toDate a Sunday.
     // We count backwards from toDate.
-    const endOfThisWeek = today.plus({ days: 7 - today.weekday })
+    const endOfThisWeek = lastDayOfData.plus({ days: 7 - lastDayOfData.weekday })
     dateRange.fromDate = endOfThisWeek.minus({ days: NUM_DAYS_TO_DISPLAY })
     dateRange.toDate = endOfThisWeek
     
@@ -65,7 +74,7 @@ export const ProgressCalendar = ({ loading, data, previewedDay, selectedDay, hov
                 let dateStr
                 if (beginsNewMonth) {
                     dateStr = <tspan font-weight="bold">{date.toFormat(`MMM d`)}</tspan>
-                } else if (date.equals(today)) {
+                } else if (date.ordinal === today.ordinal) {
                     dateStr = 'Today'
                 } else {
                     dateStr = date.toFormat(`d`)
