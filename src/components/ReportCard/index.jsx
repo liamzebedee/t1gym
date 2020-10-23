@@ -1,6 +1,6 @@
 // https://bl.ocks.org/Ro4052/caaf60c1e9afcd8ece95034ea91e1eaa
 import * as d3 from 'd3'
-import { StatGroup, Stat, StatLabel, StatNumber, StatHelpText, StatArrow, CircularProgress, Stack, Flex, Heading, Text, Box } from '@chakra-ui/core';
+import { StatGroup, Stat, StatLabel, StatNumber, StatHelpText, StatArrow, CircularProgress, Stack, Flex, Heading, Text, Box, Icon, IconButton, ButtonGroup } from '@chakra-ui/core';
 
 const SAMPLE_DATA = { "PGS": 92.58, "GVI": 1.5, "result": { "Low": { "midpoint": 323, "readingspct": "3.9", "mean": 68.3, "median": 70, "stddev": 8.8 }, "Normal": { "midpoint": 5111, "readingspct": "61.9", "mean": 130.8, "median": 129, "stddev": 25.5 }, "High": { "midpoint": 2824, "readingspct": "34.2", "mean": 231.7, "median": 217, "stddev": 48.4 } }, "hba1c": "7.3" }
 
@@ -15,6 +15,23 @@ import { useHoverPickSelector } from '../../misc/hooks';
 import { tz } from '../../misc/wrappers';
 import queryString from 'query-string'
 import React from 'react';
+
+function computeInitialProgressReportCursor() {
+    const today = DateTime.local()
+    const DAYS_TO_RETRIEVE = 7*5 // 5 weeks
+    let toDate = today
+    let fromDate = toDate
+        .minus({ days: DAYS_TO_RETRIEVE-1 })
+        .set({
+            hour: 0,
+            minute: 0,
+            second: 0,
+            millisecond: 0
+        })
+    toDate = toDate.toMillis()
+    fromDate = fromDate.toMillis()
+    return { toDate, fromDate }
+}
 
 // Buckets longitudalData into buckets lineated by day.
 function dataToDayByDay(longitudalData) {
@@ -58,27 +75,13 @@ export const ReportCard = ({ userProfile = PROFILE }) => {
     })
     const [previewedDay, selectedDay, hoveredDay, onHoverDay, onSelectDay] = useHoverPickSelector()
 
-    async function load() {
-        const today = DateTime.local()
-        const DAYS_TO_RETRIEVE = 7*5 // 5 weeks
-        let toDate = today
-        let fromDate = toDate
-            .minus({ days: DAYS_TO_RETRIEVE-1 })
-            .set({
-                hour: 0,
-                minute: 0,
-                second: 0,
-                millisecond: 0
-            })
-        toDate = toDate.toMillis()
-        fromDate = fromDate.toMillis()
-        
+    async function load(fromDate, toDate) {
         const params = {
             tz,
             fromDate,
             toDate
         }
-        
+
         const longitudalData = await fetch(`/api/bgs/longitudal?${queryString.stringify(params)}`).then(res => res.json())
 
         const statistics = calcStats(longitudalData, userProfile)
@@ -90,14 +93,11 @@ export const ReportCard = ({ userProfile = PROFILE }) => {
                 const stats = calcStats(data, userProfile)
                 return { day, data, stats }
             })
-            
+        
         setData(data)
         setStatistics(statistics)
     }
 
-    useEffect(() => {
-        load()
-    }, [])
 
     function renderPreview() {
         if(previewedDay !== null) {
@@ -106,14 +106,25 @@ export const ReportCard = ({ userProfile = PROFILE }) => {
             return <Chart data={convertData(day.data)} />
         }
     }
+
+    const [progressReportCursor, setProgressReportCursor] = useState(computeInitialProgressReportCursor())
+
+    useEffect(() => {
+        load(progressReportCursor.fromDate, progressReportCursor.toDate)
+    }, [progressReportCursor])
     
     function goBackInProgressReport() {
-        
+        const d = progressReportCursor.toDate - progressReportCursor.fromDate
+        setProgressReportCursor({
+            fromDate: progressReportCursor.fromDate - d,
+            toDate: progressReportCursor.toDate - d,
+        })
     }
     
     function goForwardInProgressReport() {
         
     }
+
 
     return <>
         <p>Your target range is {(userProfile.targetRange.bgTargetBottom / 18.).toFixed(1)} - {(userProfile.targetRange.bgTargetTop / 18.).toFixed(1)} mmol/L.</p>
@@ -134,15 +145,6 @@ export const ReportCard = ({ userProfile = PROFILE }) => {
                         <Text fontSize="2xl">{statistics.hba1c}%</Text>
                     </div>
                 </Box>
-
-                {/* <Stat>
-                    <StatLabel>Progress since last month</StatLabel>
-                    <StatNumber>45</StatNumber>
-                    <StatHelpText>
-                    <StatArrow type="decrease" />
-                    9.05%
-                    </StatHelpText>
-                </Stat> */}
             </Stack>
         </Flex>
 
@@ -171,8 +173,9 @@ export const ReportCard = ({ userProfile = PROFILE }) => {
 
             <ProgressCalendar   
                 loading={data === null}
+                data={data}
                 {...{
-                    data, previewedDay, selectedDay, hoveredDay, onHoverDay, onSelectDay
+                    previewedDay, selectedDay, hoveredDay, onHoverDay, onSelectDay
                 }}/>
             
             {renderPreview()}
