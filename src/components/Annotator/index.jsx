@@ -13,37 +13,7 @@ import * as d3 from "d3"
 import { NightscoutProfilesContext } from "../../misc/contexts";
 import { MINUTE } from "../../model";
 
-const Annotation = ({ startTime, endTime, tags, notes, active }) => {
-    const start = DateTime.fromJSDate(startTime)
-    return <>
-    <TableCell>
-     <Text>
-        { active 
-        ? <b>{ start.toFormat('t') }</b> 
-        : start.toFormat('t') 
-        }
-        
-    </Text>
-    </TableCell>
-    <TableCell>
-        { tags.join(', ') }
-        {/* <Stack spacing={1} isInline>
-            {tags.length && tags.map(tag => <Tag
-                size={'sm'}
-                rounded="full"
-                variant="solid"
-            >
-                <TagLabel>{tag}</TagLabel>
-            </Tag>)}
-        </Stack> */}
-    </TableCell>
-    <TableCell>
-        <p style={{ whiteSpace: 'pre-wrap' }}>
-            {notes}
-        </p>
-    </TableCell>
-    </>
-}
+
 
 function isCarbTreatment(treatment) {
     return treatment.eventType == 'Meal Bolus'
@@ -156,29 +126,7 @@ export const Annotator = (props) => {
                             {day.toFormat('ccc DDD')}
                         </Heading>
                         
-                        <Table>
-                            <TableHead>
-                                <TableRow>
-                                    <TableHeader width={80}>Time</TableHeader>
-                                    <TableHeader width={80}>Tags</TableHeader>
-                                    <TableHeader>Notes</TableHeader>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                            {
-                                _.sortBy(annotations, ['startTime'])
-                                .map((x, i) => <TableRow 
-                                    key={x.id} 
-                                    bg={i % 2 == 0 ? 'white' : 'gray.50'} 
-                                    className={`${styles.annotation} ${selectedAnnotation === x.id && styles.active}`}
-                                    onClick={() => onSelectAnnotation(x.id)}
-                                    onMouseEnter={() => onHoverAnnotation(x.id)}
-                                    onMouseLeave={() => onHoverAnnotation(null)}>
-                                    <Annotation {...x} active={selectedAnnotation === x.id}/>
-                                </TableRow>) 
-                            }
-                            </TableBody>
-                        </Table>
+                        <AnnotationsTable {...{ annotations, onSelectAnnotation, onHoverAnnotation, selectedAnnotation,  }}/>
                     </Box>
                     
                     <Box p={2} shadow="xs" borderWidth="1px">
@@ -216,4 +164,63 @@ export const Annotator = (props) => {
             </Flex>
         </Flex>
     </Box>
+}
+
+
+const AnnotationsTable = ({ annotations, onSelectAnnotation, onHoverAnnotation, selectedAnnotation }) => {
+    return <Table>
+        <TableHead>
+            <TableRow>
+                <TableHeader width={80}>Time</TableHeader>
+                <TableHeader width={80}>Tags</TableHeader>
+                <TableHeader>Notes</TableHeader>
+            </TableRow>
+        </TableHead>
+        <TableBody>
+        {
+            _.sortBy(annotations, ['startTime'])
+            .map((x, i) => <TableRow 
+                key={x.id} 
+                bg={i % 2 == 0 ? 'white' : 'gray.50'} 
+                className={`${styles.annotation} ${selectedAnnotation === x.id && styles.active}`}
+                onClick={() => onSelectAnnotation(x.id)}
+                onMouseEnter={() => onHoverAnnotation(x.id)}
+                onMouseLeave={() => onHoverAnnotation(null)}>
+                <AnnotationTableRow {...x} active={selectedAnnotation === x.id}/>
+            </TableRow>) 
+        }
+        </TableBody>
+    </Table>
+}
+
+const AnnotationTableRow = ({ startTime, endTime, tags, notes, active }) => {
+    const start = DateTime.fromJSDate(startTime)
+    return <>
+    <TableCell>
+     <Text>
+        { active 
+        ? <b>{ start.toFormat('t') }</b> 
+        : start.toFormat('t') 
+        }
+        
+    </Text>
+    </TableCell>
+    <TableCell>
+        { tags.join(', ') }
+        {/* <Stack spacing={1} isInline>
+            {tags.length && tags.map(tag => <Tag
+                size={'sm'}
+                rounded="full"
+                variant="solid"
+            >
+                <TagLabel>{tag}</TagLabel>
+            </Tag>)}
+        </Stack> */}
+    </TableCell>
+    <TableCell>
+        <p style={{ whiteSpace: 'pre-wrap' }}>
+            {notes}
+        </p>
+    </TableCell>
+    </>
 }
