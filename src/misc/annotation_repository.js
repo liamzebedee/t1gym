@@ -42,10 +42,31 @@ class AnnotationRepository {
                     })
                     .map(fromFirebaseFormat)
             })
-            
     }
 
-    saveAnnotation(annotation) {
+    getAnnotationsRealtime(dateRange) {
+        const db = firebase.firestore()
+        const userId = firebase.auth().currentUser.uid
+        const annotationsRef = db.collection("annotations")
+        const firebaseDateRange = dateRange.map(firebase.firestore.Timestamp.fromMillis)
+
+        return cb => annotationsRef
+            .where('userId', '==', userId)
+            .orderBy('startTime')
+            .startAt(firebaseDateRange[0])
+            .endAt(firebaseDateRange[1])
+            .onSnapshot((doc) => {
+                const res = doc.docs
+                    .map(doc => {
+                        // TODO(liamz): Ugly ugly ugly.
+                        return { id: doc.id, ...doc.data() }
+                    })
+                    .map(fromFirebaseFormat)
+                cb(res)
+            })
+    }
+
+    async saveAnnotation(annotation) {
         const db = firebase.firestore()
         const userId = firebase.auth().currentUser.uid
 

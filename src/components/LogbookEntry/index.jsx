@@ -24,7 +24,7 @@ function isInsulinTreatment(treatment) {
 }
 
 export const LogbookEntry = (props) => {
-    const { data, treatments, onAnnotation } = props
+    const { data, treatments, annotations, onAnnotation } = props
     const extent = d3.extent(data, function (d) { return d.date })
     const profiles = useContext(NightscoutProfilesContext)
     const basalSeries = getBasalSeries(profiles, treatments.filter(event => event.eventType == 'Temp Basal'), extent[0], extent[1])
@@ -102,11 +102,8 @@ export const LogbookEntry = (props) => {
         setBrush(coords)
     }
 
-    let [annotations, setAnnotations] = useState(props.annotations || [])
     async function onSaveAnnotation(annotation) {
         await props.onSaveAnnotation(annotation)
-
-        setAnnotations([ ...annotations, annotation ])
         setBrush(null)
     }
     function onDiscardAnnotation() {
