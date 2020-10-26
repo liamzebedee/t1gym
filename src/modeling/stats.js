@@ -1,5 +1,33 @@
 import * as ss from 'simple-statistics'
+import { MINUTE } from '../model'
 const SAMPLE_DATA = { "PGS": 92.58, "GVI": 1.5, "result": { "Low": { "midpoint": 323, "readingspct": "3.9", "mean": 68.3, "median": 70, "stddev": 8.8 }, "Normal": { "midpoint": 5111, "readingspct": "61.9", "mean": 130.8, "median": 129, "stddev": 25.5 }, "High": { "midpoint": 2824, "readingspct": "34.2", "mean": 231.7, "median": 217, "stddev": 48.4 } }, "hba1c": "7.3" }
+
+function calculateMissingData(glucose_data) {
+  let totalMinutesMissingData = 0
+  const maxGap = 10*MINUTE
+
+  let dayStart = new Date(glucose_data[0].displayTime)
+  dayStart.setHours(0, 0, 0, 0)
+  let dayEnd = new Date(glucose_data[0].displayTime)
+  dayEnd.setHours(24, 0, 0, 0)
+
+  let lastTime = dayStart
+  for(let i = 0; i < glucose_data.length; i++) {
+    const time = glucose_data[i].displayTime
+    const delta = time.getTime() - lastTime.getTime()
+    if(delta > maxGap) {
+      totalMinutesMissingData += delta
+    }
+    lastTime = time
+  }
+
+  let delta = dayEnd.getTime() - lastTime
+  if(delta > maxGap) {
+    totalMinutesMissingData += delta
+  }
+
+  return totalMinutesMissingData / MINUTE
+}
 
 export function calcStats(sgvData, userProfile) {
   let displayUnits = ''
@@ -72,6 +100,9 @@ export function calcStats(sgvData, userProfile) {
   //   $('#glucosedistribution-days').text(translate('Result is empty'));
     return;
   }
+  
+  const totalMinutesMissingData = calculateMissingData(data)
+  // console.log('total minutes missing data: ', totalMinutesMissingData)
 
   // data cleaning pass 1 - add interpolated missing points
   for (let i = 0; i <= data.length - 2; i++) {
@@ -110,6 +141,8 @@ export function calcStats(sgvData, userProfile) {
   var glucose_data2 = [glucose_data[0]];
   var prevEntry = glucose_data[0];
 
+
+  // 15 minutes
   const maxGap = (5 * 60 * 1000) + 10000;
 
   for (let i = 1; i <= glucose_data.length - 2; i++) {
@@ -297,6 +330,10 @@ export function calcStats(sgvData, userProfile) {
     const nextEntry = glucose_data[i + 1];
     const timeDelta = nextEntry.displayTime.getTime() - entry.displayTime.getTime();
 
+    
+    // Keep track of 
+
+
     // Use maxGap constant
     if (timeDelta == 0 || timeDelta > maxGap) { // 6 * 60 * 1000) {
       // console.log("Record skipped");
@@ -414,6 +451,7 @@ export function calcStats(sgvData, userProfile) {
 
   const hba1c = (Math.round(10 * (ss.mean(mgDlBgs) + 46.7) / 28.7) / 10).toFixed(1)
   return {
+      totalMinutesMissingData,
       PGS,
       GVI,
       result,

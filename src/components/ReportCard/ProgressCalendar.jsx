@@ -12,6 +12,7 @@ import { tz } from '../../misc/wrappers';
 import queryString from 'query-string'
 import React from 'react';
 import { color } from './helpers';
+import { HOUR } from '../../model';
 
 export const ProgressCalendar = ({ loading, data, previewedDay, selectedDay, hoveredDay, onHoverDay, onSelectDay }) => {
     const margin = {
@@ -72,13 +73,19 @@ export const ProgressCalendar = ({ loading, data, previewedDay, selectedDay, hov
 
                 // Show PGS only if the day contained data.
                 let pgs
-                if(datum && datum.stats && !date.equals(today)) {
+                // TODO: refactor this disgusting mess.
+                if(datum && datum.stats && !date.equals(today) && datum.stats.totalMinutesMissingData < 60*6) {
                     const { PGS } = datum.stats
                     pgs = <g 
                         transform={`translate(65,80)`}
                         >
                         <circle r={40} cx={0} cy={0} fill={color(PGS)} />
                         <text textAnchor="middle" class={styles.pgsLabel} dy=".3em">{PGS.toFixed(0)}</text>
+                    </g>
+                } else if(date.ordinal < today.ordinal && (!datum || datum.stats.totalMinutesMissingData > 60*3)) {
+                    pgs = <g transform={`translate(65,80)`}>
+                        <circle r={40} cx={0} cy={0} fill={'#8080802e'} />
+                        <text textAnchor="middle" class={styles.pgsLabel} dy=".3em"></text>
                     </g>
                 } else {
                     pgs = <g transform={`translate(65,80)`}>
