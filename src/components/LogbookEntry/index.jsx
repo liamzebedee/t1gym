@@ -1,4 +1,4 @@
-import { Box, Flex, Stack, Heading, Text, Tag, TagLabel } from "@chakra-ui/core";
+import { Box, Flex, Stack, Heading, Text, Tag, TagLabel, Icon, IconButton, Button, ButtonGroup } from "@chakra-ui/core";
 import { useRef, useState, useContext } from 'react';
 import * as _ from 'lodash'
 import { DateTime } from 'luxon'
@@ -13,37 +13,7 @@ import * as d3 from "d3"
 import { NightscoutProfilesContext } from "../../misc/contexts";
 import { MINUTE } from "../../model";
 
-const Annotation = ({ startTime, endTime, tags, notes, active }) => {
-    const start = DateTime.fromJSDate(startTime)
-    return <>
-    <TableCell>
-     <Text>
-        { active 
-        ? <b>{ start.toFormat('t') }</b> 
-        : start.toFormat('t') 
-        }
-        
-    </Text>
-    </TableCell>
-    <TableCell>
-        { tags.join(', ') }
-        {/* <Stack spacing={1} isInline>
-            {tags.length && tags.map(tag => <Tag
-                size={'sm'}
-                rounded="full"
-                variant="solid"
-            >
-                <TagLabel>{tag}</TagLabel>
-            </Tag>)}
-        </Stack> */}
-    </TableCell>
-    <TableCell>
-        <p style={{ whiteSpace: 'pre-wrap' }}>
-            {notes}
-        </p>
-    </TableCell>
-    </>
-}
+
 
 function isCarbTreatment(treatment) {
     return treatment.eventType == 'Meal Bolus'
@@ -53,7 +23,7 @@ function isInsulinTreatment(treatment) {
         || treatment.eventType == 'Correction Bolus'
 }
 
-export const Annotator = (props) => {
+export const LogbookEntry = (props) => {
     const { data, treatments, onAnnotation } = props
     const extent = d3.extent(data, function (d) { return d.date })
     const profiles = useContext(NightscoutProfilesContext)
@@ -147,6 +117,43 @@ export const Annotator = (props) => {
 
     const day = getStartOfDayForTime(data[0].date)
 
+    function handleDownloadCsv(el) {
+        // Generate the CSV's filename and content.
+        // The filename is in the form: bgls_dd-mm-yyyy.csv
+        // The content is a table of two columns, Time and BGL.
+        const day = DateTime.fromMillis(extent[0])
+        const csvFilename = `bgls_${day.toFormat('dd-MM-yyyy')}.csv` // bgls_dd-mm-yyyy.csv
+        let csvContent = ""
+        csvContent += `Time,BGL\n`
+
+        const dataSorted = _.sortBy(data, 'date')
+        for(let row of dataSorted) {
+            const time = DateTime.fromMillis(row.date).toFormat('t') // hh:mm
+            const bgl = row.sgv.toFixed(1)
+            csvContent += `${time},${bgl}\n`
+        }
+
+        // To download a file, we use the HTML5 Blob [1] and Object URL [2] API's.
+        //  1. A blob is created from a string, which is then used to generate an
+        //     object URL.
+        //  2. An anonymous <a> element is generated.
+        //  3. We set the a.href to an object URL, and click it to start the download.
+        // 
+        // [1] Blob: https://developer.mozilla.org/en-US/docs/Web/API/Blob
+        // [2] createObjectURL: https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        const downloadLink = document.createElement("a")
+        const url = URL.createObjectURL(blob)
+        downloadLink.id = "download"
+        downloadLink.download = csvFilename
+        downloadLink.href = url
+        downloadLink.click()
+        // window.URL.revokeObjectURL(url);
+        // We don't call revokeObjectURL, as there are some cross-browser incompatibilities
+        // that I don't care to fix right now. 
+        // See: https://stackoverflow.com/a/48968694/453438
+    }
+
     return <Box pb={10} pt={10} borderWidth="1px" shadow="xs">
         <Flex flexDirection="row">
             <Flex flex="4" align="top" justify="center" justifyItems="center" pl={10} pr={10}>
@@ -155,30 +162,18 @@ export const Annotator = (props) => {
                         <Heading fontSize="xl" mb={5}>
                             {day.toFormat('ccc DDD')}
                         </Heading>
-                        
-                        <Table>
-                            <TableHead>
-                                <TableRow>
-                                    <TableHeader width={80}>Time</TableHeader>
-                                    <TableHeader width={80}>Tags</TableHeader>
-                                    <TableHeader>Notes</TableHeader>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                            {
-                                _.sortBy(annotations, ['startTime'])
-                                .map((x, i) => <TableRow 
-                                    key={x.id} 
-                                    bg={i % 2 == 0 ? 'white' : 'gray.50'} 
-                                    className={`${styles.annotation} ${selectedAnnotation === x.id && styles.active}`}
-                                    onClick={() => onSelectAnnotation(x.id)}
-                                    onMouseEnter={() => onHoverAnnotation(x.id)}
-                                    onMouseLeave={() => onHoverAnnotation(null)}>
-                                    <Annotation {...x} active={selectedAnnotation === x.id}/>
-                                </TableRow>) 
-                            }
-                            </TableBody>
-                        </Table>
+
+                        <Box pb={5}>
+                        <Button
+                            variant="outline"
+                            onClick={handleDownloadCsv}
+                            aria-label="Download CSV"
+                            icon="download">
+                                <Icon name='download'></Icon>Download CSV
+                        </Button>
+                        </Box>
+
+                        <AnnotationsTable {...{ annotations, onSelectAnnotation, onHoverAnnotation, selectedAnnotation,  }}/>
                     </Box>
                     
                     <Box p={2} shadow="xs" borderWidth="1px">
@@ -216,4 +211,63 @@ export const Annotator = (props) => {
             </Flex>
         </Flex>
     </Box>
+}
+
+
+const AnnotationsTable = ({ annotations, onSelectAnnotation, onHoverAnnotation, selectedAnnotation }) => {
+    return <Table>
+        <TableHead>
+            <TableRow>
+                <TableHeader width={80}>Time</TableHeader>
+                <TableHeader width={80}>Tags</TableHeader>
+                <TableHeader>Notes</TableHeader>
+            </TableRow>
+        </TableHead>
+        <TableBody>
+        {
+            _.sortBy(annotations, ['startTime'])
+            .map((x, i) => <TableRow 
+                key={x.id} 
+                bg={i % 2 == 0 ? 'white' : 'gray.50'} 
+                className={`${styles.annotation} ${selectedAnnotation === x.id && styles.active}`}
+                onClick={() => onSelectAnnotation(x.id)}
+                onMouseEnter={() => onHoverAnnotation(x.id)}
+                onMouseLeave={() => onHoverAnnotation(null)}>
+                <AnnotationTableRow {...x} active={selectedAnnotation === x.id}/>
+            </TableRow>) 
+        }
+        </TableBody>
+    </Table>
+}
+
+const AnnotationTableRow = ({ startTime, endTime, tags, notes, active }) => {
+    const start = DateTime.fromJSDate(startTime)
+    return <>
+    <TableCell>
+     <Text>
+        { active 
+        ? <b>{ start.toFormat('t') }</b> 
+        : start.toFormat('t') 
+        }
+        
+    </Text>
+    </TableCell>
+    <TableCell>
+        { tags.join(', ') }
+        {/* <Stack spacing={1} isInline>
+            {tags.length && tags.map(tag => <Tag
+                size={'sm'}
+                rounded="full"
+                variant="solid"
+            >
+                <TagLabel>{tag}</TagLabel>
+            </Tag>)}
+        </Stack> */}
+    </TableCell>
+    <TableCell>
+        <p style={{ whiteSpace: 'pre-wrap' }}>
+            {notes}
+        </p>
+    </TableCell>
+    </>
 }
