@@ -5,13 +5,10 @@ import { usePromiseLoadingState } from '../../pages/helpers'
 import { annotationRepository } from '../../misc/annotation_repository'
 import DatabaseService from '../../misc/db_service'
 
-export const LogbookEntryContainer = ({ treatments, data = [] }) => {
+export const LogbookEntryContainer = ({ treatments, data = [], dateRange }) => {
     const [annotations, setAnnotations] = useState(null)
 
     async function _loadAnnotations() {
-        let dateRange = d3
-            .extent(data, function (d) { return d.date })
-            .map(x => new Date(x))
         const annotations = await annotationRepository.getAnnotations(dateRange)
         setAnnotations(annotations)
     }
@@ -23,11 +20,17 @@ export const LogbookEntryContainer = ({ treatments, data = [] }) => {
     const [load, loading] = usePromiseLoadingState(_loadAnnotations)
 
     useEffect(() => {
+        annotationRepository.getAnnotationsRealtime(dateRange)((docs) => {
+            setAnnotations(docs)
+        })
+    }, [])
+    
+    useEffect(() => {
         if(data.length) {
             load()
         }
     }, [data])
-    
+
     return <>
         { loading && '' }
         { loading == false && <LogbookEntry

@@ -43,6 +43,7 @@ export const Logbook = () => {
             {bgs && bgs.map((bgset, i) => {
                 return <div key={bgset.from}>
                     <LogbookEntryContainer 
+                        dateRange={[bgset.from, bgset.to].map(x => new Date(x))}
                         data={convertData(bgset.data)}
                         treatments={bgset.treatments}/>
                 </div>
