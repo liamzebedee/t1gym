@@ -79,6 +79,7 @@ export async function fetchNightscoutData(user, range) {
         .project({
             date: 1,
             sgv: 1,
+            _id: 0,
         })
         .toArray()
     
