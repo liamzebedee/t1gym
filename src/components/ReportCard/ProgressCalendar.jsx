@@ -80,7 +80,7 @@ export const ProgressCalendar = ({ loading, data, previewedDay, selectedDay, hov
                         transform={`translate(65,80)`}
                         >
                         <circle r={40} cx={0} cy={0} fill={color(PGS)} />
-                        <text textAnchor="middle" class={styles.pgsLabel} dy=".3em">{PGS.toFixed(0)}</text>
+                        <text textAnchor="middle" class={styles.pgsLabel} dy=".3em"></text>
                     </g>
                 } else if(date.ordinal < today.ordinal && (!datum || datum.stats.totalMinutesMissingData > 60*3)) {
                     pgs = <g transform={`translate(65,80)`}>
