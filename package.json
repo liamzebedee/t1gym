@@ -37,6 +37,8 @@
     "react": "^16.13.1",
     "react-datetime": "^2.16.3",
     "react-dom": "^16.13.1",
+    "react-router": "^5.2.0",
+    "react-router-dom": "^5.2.0",
     "react-spring": "^8.0.27",
     "simple-statistics": "^7.1.0",
     "typescript": "^3.9.6",

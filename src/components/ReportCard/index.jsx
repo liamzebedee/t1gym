@@ -133,12 +133,11 @@ export const ReportCard = ({ userProfile = PROFILE }) => {
             {/* {data === null && <div>
                 <CircularProgress isIndeterminate size="sm" color="green"/> Loading BG's from Nightscout...
             </div>} */}
-
             <ProgressCalendar   
                 loading={data === null}
                 {...{
                     data, previewedDay, selectedDay, hoveredDay, onHoverDay, onSelectDay
-                }}/>
+                }}/> 
             
             {renderPreview()}
         </Flex>

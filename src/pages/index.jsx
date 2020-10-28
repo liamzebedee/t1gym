@@ -1,5 +1,11 @@
-import { App } from '../components/App'
 import Head from 'next/head'
+
+// Disable SSR for entire app. :'(
+// Needed for React Router to function.
+import dynamic from 'next/dynamic'
+const App = dynamic(() => import('../components/App'), {
+  ssr: false // process.env.NEXT_PUBLIC_SSR_ENABLED
+})
 
 export default () => <>
     <Head>
