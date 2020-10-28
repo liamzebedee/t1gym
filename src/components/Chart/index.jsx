@@ -151,7 +151,7 @@ export const Chart = (props) => {
     }
         
     return <div className={styles.chart}>
-        <svg className={styles.bgChart} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio={0}>
+        <svg className={styles.bgChart} viewBox={`0 0 ${width} ${height}`}>
             {/* Axes. */}
             <g ref={xAxisRef} transform={`translate(0, ${height - margin.bottom})`}>
             </g>
@@ -379,7 +379,7 @@ export const TempBasalChart = ({ width = 1200, height = 300, extent, basalSeries
         // .defined(d => d.rate !== 0)
         .curve(d3.curveStep)
 
-    return <svg className={styles.tempBasalChart} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio={0}>
+    return <svg className={styles.tempBasalChart} viewBox={`0 0 ${width} ${height}`}>
         {/* Axes. */}
         <g ref={xAxisRef} transform={`translate(0, ${height - margin.bottom})`}>
         </g>
