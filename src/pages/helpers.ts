@@ -230,7 +230,7 @@ export function usePromiseLoadingState(fn1) {
     let [loading, setLoading] = useState(null)
     async function fn() {
         setLoading(true)
-        await fn1(arguments)
+        await fn1(...arguments)
         setLoading(false)
     }
     return [fn, loading]
