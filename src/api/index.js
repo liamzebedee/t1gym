@@ -84,7 +84,7 @@ export async function fetchNightscoutData(user, range) {
     
     return {
         treatments,
-        data: sgvs,
+        sgvs,
     }
 }
 

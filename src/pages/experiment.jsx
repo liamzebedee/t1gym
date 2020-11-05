@@ -569,6 +569,18 @@ const foodDigestionCarbs = functions.foodDigestion('carbs', 30, 0.5)
 const foodDigestionProtein = functions.foodDigestion('protein', 30)
 const basal = functions.basalEffect(0.7)
 
+const squareWave = compose(
+    functions.squareWave(6.3, 1.5*60),
+    functions.window({
+        start: 0,
+        duration: 5*HOUR
+    })
+)
+
+const glucoseConversion = compose(
+    functions.insulinGlucoseEffect(functions.fiaspInsulinActive(1.0))
+)
+
 const FunctionPlots = () => {
     return <>
         <FunctionPlot title="Testing" id='testing' fn={testing} duration={6*HOUR}/>
@@ -577,6 +589,8 @@ const FunctionPlots = () => {
         <FunctionPlot title="Food digestion (30g - Carbs)" id='insulin' fn={foodDigestionCarbs} duration={7*HOUR}/>
         <FunctionPlot title="Food digestion (30g - Protein)" id='insulin' fn={foodDigestionProtein} duration={7*HOUR}/>
         <FunctionPlot title="Basal rate" id='basal' fn={basal} duration={5*HOUR}/>
+        <FunctionPlot title="Square wave" id='square-wave' fn={squareWave} duration={5*HOUR}/>
+        <FunctionPlot title="Glucose conversion curve" id='glucose-conversion-curve' fn={glucoseConversion} duration={5*HOUR}/>
     </>
 }
 

@@ -12,9 +12,49 @@ import { functions, MINUTE, compose, SECOND } from "../../model";
 import { PROFILE } from '../../misc/constants'
 import { NightscoutProfilesContext } from "../../misc/contexts";
 
+function smoothData(data) {
+
+    // alpha * reading + (1 - alpha) * lastOutput
+    // const alpha = 0.9
+
+    const K = 4
+    if(data.length < K) return data
+    // let runningAverage = (data[0].sgv + data[1].sgv + data[2].sgv) / 3
+    const dataSmoothed = []
+    
+    for(let i = 0; i < K; i++) {
+        dataSmoothed.push(data[i])
+    }
+    
+    for(let i = K; i < data.length; i += 1) {
+        const avg = 0
+        for(let j = 0; j < K; j++) {
+            avg += data[i-j].sgv
+        }
+        avg /= K
+        dataSmoothed.push({
+            date: data[i].date,
+            sgv: avg
+        })
+    }
+
+    // dataSmoothed.push(data[0])
+    // for(let i = 1; i < data.length; i++) {
+    //     const { date, sgv } = data[i]
+    //     dataSmoothed.push({
+    //         date,
+    //         sgv: alpha * sgv + (1 - alpha) * data[i-1].sgv
+    //     })
+    // }
+
+    return dataSmoothed
+}
+
 export const Chart = (props) => {
     let onEndBrush = props.onEndBrush || identity
-    const data = _.sortBy(props.data, 'date')
+    const data = smoothData(_.sortBy(props.data, 'date'))
+    // const data = smoothData(props.data)
+    // const sgvs = data.map(d => d.sgv)
 
     const annotations = props.annotations || []
     const events = props.events || []

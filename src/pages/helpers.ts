@@ -255,7 +255,7 @@ export function usePromiseLoadingStateWithError(fn1) {
             error: null
         })
         try {
-            await fn1(arguments)
+            await fn1(...arguments)
         } catch(error) {
             setState({
                 status: 'error',

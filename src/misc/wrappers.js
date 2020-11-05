@@ -5,7 +5,11 @@ import "firebase/firestore";
 import { useState, useEffect } from "react";
 import { DateTime } from "luxon";
 
+let initialized = false
 export async function initialiseFirebase() {
+  if(initialized) {
+    console.debug('firebase already initialized, returning early')
+  }
   const firebaseConfig = {
     apiKey: "AIzaSyCb_ngSJOr7w-SIVWmt_wTMnQVFFE9b_VM",
     authDomain: "diasim.firebaseapp.com",
@@ -31,9 +35,14 @@ export async function initialiseFirebase() {
     }
   }
   firebase.analytics()
+  initialized = true
 }
 
+let authenticated = false
 export async function authenticateFirebase() {
+    if(authenticated) {
+      console.debug('firebase already authenticated, returning early')
+    }
     return new Promise((res, rej) => {
         const auth = firebase.auth()
         
@@ -50,6 +59,7 @@ export async function authenticateFirebase() {
                 const token = await user.getIdToken(true)
                 console.debug(`Setting Firebase token to ${token}`)
                 document.cookie = `token=${token}; path=/`
+                authenticated = true
                 res()
             }
         })
