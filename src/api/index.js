@@ -125,5 +125,16 @@ export async function getProfiles(user, range) {
         })
         .toArray()
     
-    return profiles
+    const latestProfile = await db.collection('profile')
+        .find({
+            startDate: {
+                $lte: treatmentTimeRange[0],
+            }
+        })
+        // Sort by date descending, returning the most recent profile before 
+        // the beginning of `range`
+        .sort({ startDate: -1 }) 
+        .limit(1)
+        .toArray()
+    return [...latestProfile, ...profiles]
 }

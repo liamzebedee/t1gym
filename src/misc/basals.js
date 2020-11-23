@@ -126,6 +126,8 @@ export function getBasalSeries(profiles, treatments, fromDate, toDate) {
                     duration: 5,
                     time: i
                 }
+            } else {
+                console.debug("No currentProfile. Perhaps the user is missing data.")
             }
         }
         
@@ -140,7 +142,11 @@ export function getBasalSeries(profiles, treatments, fromDate, toDate) {
             }
         }
         
-        basalSeries.push(activeBasal)
+        // TODO: activeBasal may be null due to missing profile data. This should be fixed,
+        // but I haven't devised a good solution yet.
+        if(activeBasal) {
+            basalSeries.push(activeBasal)
+        }
     }
 
     return basalSeries
