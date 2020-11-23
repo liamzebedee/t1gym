@@ -13,6 +13,7 @@ import { AppWrapper } from '../AppWrapper';
 import { Logbook } from '../Logbook';
 import { ReportCard } from '../ReportCard';
 import { ViewLogbookEntry } from "../ViewLogbookEntry";
+import { ViewPatternBank } from "../ViewPatternBank";
 import styles from './index.module.css';
 const history = createHashHistory();
 
@@ -62,6 +63,7 @@ const App = () => {
 
                             <Route path="/logbook" exact component={Logbook} />
                             <Route path='/logbook/entry/:id/' component={ViewLogbookEntry} />
+                            <Route path='/beta/view-pattern-bank' component={ViewPatternBank} />
                         </Switch>
 
                         {/* <footer>
