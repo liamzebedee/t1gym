@@ -8,12 +8,12 @@ import {
 import { BGSContext, selectInDateRange } from "../../misc/contexts";
 import { convertData } from "../../pages/helpers";
 import { LogbookEntryContainer } from "../LogbookEntry/Container";
+import { getDateRangeOfOneDay } from '../../misc/utils'
 
 export const ViewLogbookEntry = function() {
+    // The id is a timestamp, which we use to determine which day of logbook data to display.
     let { id } = useParams()
-    const startTime = parseInt(id)
-    const endTime = DateTime.fromMillis(startTime).plus({ days: 1 }).toMillis()
-
+    const [ startTime, endTime ] = getDateRangeOfOneDay(parseInt(id))
     const { treatments, bgs, getBGData } = useContext(BGSContext)
 
     const { isLoading, isSuccess } = useQuery(
