@@ -2,11 +2,31 @@ import MongoClient from 'mongodb'
 
 import { admin } from '../api/firebase'
 
+class MongoDBConnectionCache {
+    cache = {}
+
+    async getMongoDatabase(userId) {
+        let db = this.cache[userId]
+        if(db) return db
+        else {
+            db = await this.getNewMongoDatabase(userId)
+            this.cache[userId] = db
+            return db
+        }
+    }
+
+    async getNewMongoDatabase(userId) {
+        const userRecord = await admin.database().ref(`/users/${userId}`).once('value').then(snapshot => snapshot.val())
+        const client = await MongoClient.connect(userRecord.mongoDbUrl)
+        const db = client.db(userRecord.mongoDbName)
+        return db
+    }
+}
+
+let mongoDBConnectionCache = new MongoDBConnectionCache()
+
 export async function getMongoDatabase(userId) {
-    const userRecord = await admin.database().ref(`/users/${userId}`).once('value').then(snapshot => snapshot.val())
-    const client = await MongoClient.connect(userRecord.mongoDbUrl)
-    const db = client.db(userRecord.mongoDbName)
-    return db
+    return mongoDBConnectionCache.getMongoDatabase(userId)
 }
 
 export async function fetchTreatments(user, range) {
@@ -79,6 +99,7 @@ export async function fetchNightscoutData(user, range) {
         .project({
             date: 1,
             sgv: 1,
+            _id: 0,
         })
         .toArray()
     
