@@ -76,6 +76,8 @@ import _ from 'lodash'
 import { DateTime } from 'luxon'
 import { MINUTE } from '../model'
 
+export const BASAL_SERIES_STEP_MINUTES = 5
+
 /**
  * Computes the complete basal series from a series of 
  * temp basal treatments, and a list of profiles.
