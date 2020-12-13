@@ -5,7 +5,9 @@ import { QueryCache, ReactQueryCacheProvider } from 'react-query';
 import {
     HashRouter as Router,
     Route,
-    Switch
+    Switch,
+    useLocation,
+    matchPath
 } from "react-router-dom";
 import { BGSModel } from '../../misc/contexts';
 import { MINUTE } from "../../model";
@@ -27,6 +29,37 @@ const queryCache = new QueryCache({
     },
 })
 
+const TABS = [
+    {
+        name: 'Overview',
+        path: '/'
+    },
+    {
+        name: 'Logbook',
+        path: '/logbook'
+    }
+]
+
+const TabMenu = () => {
+    const location = useLocation()
+
+    let activeTab = -1
+    TABS.forEach(({ path }, i) => {
+        if(location.pathname.startsWith(path))
+            activeTab = i
+    })
+
+    return <Tabs variantColor="green" defaultIndex={activeTab}>
+        <TabList>
+            {
+                TABS.map(({ name, path }) => <Tab onClick={() => history.push(path)}>
+                    {name}
+                </Tab>)
+            }
+        </TabList>
+    </Tabs>
+}
+
 const App = () => {
     return <AppWrapper>
         <ReactQueryCacheProvider queryCache={queryCache}>
@@ -36,17 +69,8 @@ const App = () => {
                         <Heading pt="5" pb="5">
                             <img alt="Type One Gym" className={styles.logo} src="/images/logo.png" />
                         </Heading>
-                        <Tabs variantColor="green">
-                            <TabList>
-                                {/* TODO fix */}
-                                <Tab onClick={() => history.push('/')}>
-                                    Overview
-                                </Tab>
-                                <Tab onClick={() => history.push('/logbook')}>
-                                    Logbook
-                                </Tab>
-                            </TabList>
-                        </Tabs>
+                        
+                        <TabMenu/>
 
                         <Switch>
                             <Route path="/" exact>
