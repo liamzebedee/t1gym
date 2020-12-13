@@ -44,6 +44,27 @@ class AnnotationRepository {
             })
     }
 
+    async findAnnotationsWithTags(tags) {
+        const db = firebase.firestore()
+        const userId = firebase.auth().currentUser.uid
+    
+        const annotationsRef = db.collection("annotations")
+    
+        return annotationsRef
+            .where('userId', '==', userId)
+            .where('tags', 'array-contains-any', tags)
+            .orderBy('startTime')
+            .get()
+            .then((querySnapshot) => {
+                return querySnapshot.docs
+                    .map(doc => {
+                        // TODO(liamz): Ugly ugly ugly.
+                        return { id: doc.id, ...doc.data() }
+                    })
+                    .map(fromFirebaseFormat)
+            })
+    }
+
     getAnnotationsRealtime(dateRange) {
         const db = firebase.firestore()
         const userId = firebase.auth().currentUser.uid

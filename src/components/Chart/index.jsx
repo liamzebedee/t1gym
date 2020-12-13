@@ -12,9 +12,49 @@ import { functions, MINUTE, compose, SECOND } from "../../model";
 import { PROFILE } from '../../misc/constants'
 import { NightscoutProfilesContext } from "../../misc/contexts";
 
+function smoothData(data) {
+
+    // alpha * reading + (1 - alpha) * lastOutput
+    // const alpha = 0.9
+
+    const K = 4
+    if(data.length < K) return data
+    // let runningAverage = (data[0].sgv + data[1].sgv + data[2].sgv) / 3
+    const dataSmoothed = []
+    
+    for(let i = 0; i < K; i++) {
+        dataSmoothed.push(data[i])
+    }
+    
+    for(let i = K; i < data.length; i += 1) {
+        const avg = 0
+        for(let j = 0; j < K; j++) {
+            avg += data[i-j].sgv
+        }
+        avg /= K
+        dataSmoothed.push({
+            date: data[i].date,
+            sgv: avg
+        })
+    }
+
+    // dataSmoothed.push(data[0])
+    // for(let i = 1; i < data.length; i++) {
+    //     const { date, sgv } = data[i]
+    //     dataSmoothed.push({
+    //         date,
+    //         sgv: alpha * sgv + (1 - alpha) * data[i-1].sgv
+    //     })
+    // }
+
+    return dataSmoothed
+}
+
 export const Chart = (props) => {
     let onEndBrush = props.onEndBrush || identity
     const data = _.sortBy(props.data, 'date')
+    // const data = smoothData(props.data)
+    // const sgvs = data.map(d => d.sgv)
 
     const annotations = props.annotations || []
     const events = props.events || []
@@ -337,7 +377,13 @@ export const Chart = (props) => {
 
 import { identity } from 'lodash'
 
-export const TempBasalChart = ({ width = 1200, height = 300, extent, basalSeries, onEndBrush = identity, bgBrushExtent = null }) => {
+// Stupid hack to get Gauss working.
+require('gauss')
+const gauss = window.gauss
+
+import { BASAL_SERIES_STEP_MINUTES } from '../../misc/basals'
+
+export const TempBasalChart = ({ width = 1200, height = 300, extent, basalSeries = [], onEndBrush = identity, bgBrushExtent = null }) => {
     // Following the D3.js margin convention, mentioned here [1].
     // [1]: https://observablehq.com/@d3/margin-convention
     const margin = {
@@ -376,8 +422,18 @@ export const TempBasalChart = ({ width = 1200, height = 300, extent, basalSeries
         .x(d => x(d.startTime))
         .y0(height - margin.bottom)
         .y1(d => y(d.rate))
-        // .defined(d => d.rate !== 0)
         .curve(d3.curveStep)
+
+    // Calculate the exponential moving average of the temp basal.
+    const tempBasalVector = new gauss.Vector(basalSeries.map(x => x.rate))
+    // Temp basal data is assumed to be delineated by 5 minute steps.
+    const MOVING_AVERAGE_WINDOW = 60 / BASAL_SERIES_STEP_MINUTES
+    const tempBasalMovingAverage = tempBasalVector.ema(MOVING_AVERAGE_WINDOW)
+
+    const line = d3.line()
+        .curve(d3.curveBasis)
+        .x(function (d) { return x(d.startTime) })
+        .y(function (d, i) { return y(tempBasalMovingAverage[i]) })
 
     return <svg className={styles.tempBasalChart} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio={0}>
         {/* Axes. */}
@@ -387,8 +443,16 @@ export const TempBasalChart = ({ width = 1200, height = 300, extent, basalSeries
         <g ref={yAxisRef} transform={`translate(${margin.left}, 0)`}>
         </g>
 
+        {/* Temp basal area chart. */}
         <path
             d={area(basalSeries)}
             class={styles.tempBasal}/>
+        
+        {/* Moving average. */}
+        <path
+            d={line(basalSeries)}
+            fill="none"
+            stroke={`darkblue`}
+            strokeWidth={2} />
     </svg>
 }

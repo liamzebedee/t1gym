@@ -1,56 +1,93 @@
 // https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4543190/#!po=21.4286
-import { Box, Heading, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/core";
+import { Box, Heading, Tab, TabList, Tabs } from "@chakra-ui/core";
+import { createHashHistory } from "history";
+import { QueryCache, ReactQueryCacheProvider } from 'react-query';
+import {
+    HashRouter as Router,
+    Route,
+    Switch,
+    useLocation,
+    matchPath
+} from "react-router-dom";
+import { BGSModel } from '../../misc/contexts';
+import { MINUTE } from "../../model";
 import { AppWrapper } from '../AppWrapper';
 import { Logbook } from '../Logbook';
 import { ReportCard } from '../ReportCard';
-import { Scenarios } from '../Scenarios';
+import { ViewLogbookEntry } from "../ViewLogbookEntry";
+import { ViewPatternBank } from "../ViewPatternBank";
+import { ViewOverview } from '../ViewOverview'
 import styles from './index.module.css';
+const history = createHashHistory();
 
-export const App = () => {
+const queryCache = new QueryCache({
+    defaultConfig: {
+        queries: {
+            refetchOnWindowFocus: false,
+            refetchOnMount: false,
+            staleTime: 5 * MINUTE,
+        },
+    },
+})
+
+const TABS = [
+    {
+        name: 'Overview',
+        path: '/'
+    },
+    {
+        name: 'Logbook',
+        path: '/logbook'
+    }
+]
+
+const TabMenu = () => {
+    const location = useLocation()
+
+    let activeTab = -1
+    TABS.forEach(({ path }, i) => {
+        if(location.pathname.startsWith(path))
+            activeTab = i
+    })
+
+    return <Tabs variantColor="green" defaultIndex={activeTab}>
+        <TabList>
+            {
+                TABS.map(({ name, path }) => <Tab onClick={() => history.push(path)}>
+                    {name}
+                </Tab>)
+            }
+        </TabList>
+    </Tabs>
+}
+
+const App = () => {
     return <AppWrapper>
-        <Box p="5">
-            <Heading pt="5" pb="5">
-                <img alt="Type One Gym" className={styles.logo} src="/images/logo.png"/>
-            </Heading>
-            <Tabs variantColor="green">
-                <TabList>
-                    <Tab>Overview</Tab>
-                    {process.env.NEXT_PUBLIC_AB_LOGBOOK && 
-                    <Tab>Logbook</Tab> }
-                    {process.env.NEXT_PUBLIC_AB_PATTERNS && 
-                    <Tab>Patterns</Tab> }
-                </TabList>
+        <ReactQueryCacheProvider queryCache={queryCache}>
+            <BGSModel>
+                <Router history={history}>
+                    <Box p="5">
+                        <Heading pt="5" pb="5">
+                            <img alt="Type One Gym" className={styles.logo} src="/images/logo.png" />
+                        </Heading>
+                        
+                        <TabMenu/>
 
-                <TabPanels>
+                        <Switch>
+                            <Route path="/" exact component={ViewOverview}/>
+                            <Route path="/logbook" exact component={Logbook} />
+                            <Route path='/logbook/entry/:id/' component={ViewLogbookEntry} />
+                            <Route path='/beta/view-pattern-bank' component={ViewPatternBank} />
+                        </Switch>
 
-                    <TabPanel>
-                        <Box p={5} boxShadow="lg">
-                            <Heading size="xl">
-                                How am I tracking?
-                            </Heading>
-
-                            <Box pt={5}>
-                                <ReportCard/>
-                            </Box>
-                        </Box>
-                    </TabPanel>
-
-                    {process.env.NEXT_PUBLIC_AB_LOGBOOK && 
-                    <TabPanel>
-                        <Logbook/>
-                    </TabPanel> }
-
-                    {process.env.NEXT_PUBLIC_AB_PATTERNS && 
-                    <TabPanel>
-                        <Scenarios/>
-                    </TabPanel> }
-                    
-                </TabPanels>
-            </Tabs>
-
-            {/* <footer>
-                <small>t1 gym - v1.0.0-diabeta</small>
-            </footer> */}
-        </Box>
+                        {/* <footer>
+                            <small>t1 gym - v1.0.0-diabeta</small>
+                        </footer> */}
+                    </Box>
+                </Router>
+            </BGSModel>
+        </ReactQueryCacheProvider>
     </AppWrapper>
 }
+
+export default App

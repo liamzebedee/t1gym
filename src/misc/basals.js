@@ -76,6 +76,8 @@ import _ from 'lodash'
 import { DateTime } from 'luxon'
 import { MINUTE } from '../model'
 
+export const BASAL_SERIES_STEP_MINUTES = 5
+
 /**
  * Computes the complete basal series from a series of 
  * temp basal treatments, and a list of profiles.
@@ -126,6 +128,8 @@ export function getBasalSeries(profiles, treatments, fromDate, toDate) {
                     duration: 5,
                     time: i
                 }
+            } else {
+                console.debug("No currentProfile. Perhaps the user is missing data.")
             }
         }
         
@@ -140,7 +144,11 @@ export function getBasalSeries(profiles, treatments, fromDate, toDate) {
             }
         }
         
-        basalSeries.push(activeBasal)
+        // TODO: activeBasal may be null due to missing profile data. This should be fixed,
+        // but I haven't devised a good solution yet.
+        if(activeBasal) {
+            basalSeries.push(activeBasal)
+        }
     }
 
     return basalSeries

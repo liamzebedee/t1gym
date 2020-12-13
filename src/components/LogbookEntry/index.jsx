@@ -12,7 +12,7 @@ import { getBasalSeries } from "../../misc/basals";
 import * as d3 from "d3"
 import { NightscoutProfilesContext } from "../../misc/contexts";
 import { MINUTE } from "../../model";
-
+import { Link } from 'react-router-dom'
 
 
 function isCarbTreatment(treatment) {
@@ -157,7 +157,8 @@ export const LogbookEntry = (props) => {
                 <Stack flexGrow={1} spacing={8}>
                     <Box>
                         <Heading fontSize="xl" mb={5}>
-                            {day.toFormat('ccc DDD')}
+                            {/* TODO */}
+                            <Link to={`/logbook/entry/${day.toMillis()}`}>{day.toFormat('ccc DDD')}</Link>
                         </Heading>
 
                         <Box pb={5}>

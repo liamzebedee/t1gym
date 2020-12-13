@@ -230,7 +230,7 @@ export function usePromiseLoadingState(fn1) {
     let [loading, setLoading] = useState(null)
     async function fn() {
         setLoading(true)
-        await fn1(arguments)
+        await fn1(...arguments)
         setLoading(false)
     }
     return [fn, loading]
@@ -255,7 +255,7 @@ export function usePromiseLoadingStateWithError(fn1) {
             error: null
         })
         try {
-            await fn1(arguments)
+            await fn1(...arguments)
         } catch(error) {
             setState({
                 status: 'error',

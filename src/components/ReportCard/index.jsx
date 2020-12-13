@@ -1,20 +1,21 @@
 // https://bl.ocks.org/Ro4052/caaf60c1e9afcd8ece95034ea91e1eaa
-import * as d3 from 'd3'
-import { StatGroup, Stat, StatLabel, StatNumber, StatHelpText, StatArrow, CircularProgress, Stack, Flex, Heading, Text, Box } from '@chakra-ui/core';
+import { Box, Flex, Heading, Stack, Stat, StatGroup, StatLabel, Text } from '@chakra-ui/core';
+import * as _ from 'lodash';
+import { DateTime } from 'luxon';
+import queryString from 'query-string';
+import React from 'react';
+import { useQuery } from 'react-query';
+import { PROFILE } from '../../misc/constants';
+import { useHoverPickSelector } from '../../misc/hooks';
+import { tz } from '../../misc/wrappers';
+import { calcStats } from '../../modeling/stats';
+import { convertData } from '../../pages/helpers';
+import { Chart } from '../Chart';
+import { color } from './helpers';
+import { ProgressCalendar } from './ProgressCalendar';
 
 const SAMPLE_DATA = { "PGS": 92.58, "GVI": 1.5, "result": { "Low": { "midpoint": 323, "readingspct": "3.9", "mean": 68.3, "median": 70, "stddev": 8.8 }, "Normal": { "midpoint": 5111, "readingspct": "61.9", "mean": 130.8, "median": 129, "stddev": 25.5 }, "High": { "midpoint": 2824, "readingspct": "34.2", "mean": 231.7, "median": 217, "stddev": 48.4 } }, "hba1c": "7.3" }
 
-import { calcStats } from '../../modeling/stats'
-import { DateTime } from 'luxon'
-import * as _ from 'lodash'
-import { useEffect, useState, useCallback } from 'react';
-import { Chart } from '../Chart';
-import styles from './styles.module.css'
-import { convertData } from '../../pages/helpers';
-import { useHoverPickSelector } from '../../misc/hooks';
-import { tz } from '../../misc/wrappers';
-import queryString from 'query-string'
-import React from 'react';
 
 // Buckets longitudalData into buckets lineated by day.
 function dataToDayByDay(longitudalData) {
@@ -46,16 +47,8 @@ const Blip = ({ pgs }) => {
     </svg>
 }
 
-import { PROFILE } from '../../misc/constants'
-import { ProgressCalendar } from './ProgressCalendar';
-import { color } from './helpers';
 
 export const ReportCard = ({ userProfile = PROFILE }) => {
-    let [data, setData] = useState(null)
-    let [statistics, setStatistics] = useState({
-        PGS: null,
-        hba1c: null
-    })
     const [previewedDay, selectedDay, hoveredDay, onHoverDay, onSelectDay] = useHoverPickSelector()
 
     async function load() {
@@ -66,25 +59,37 @@ export const ReportCard = ({ userProfile = PROFILE }) => {
 
         const statistics = calcStats(longitudalData, userProfile)
 
-        let data = []
         let days = dataToDayByDay(longitudalData)
-        data = 
+        let dailyData = 
             days.map(({ day, data }) => {
                 const stats = calcStats(data, userProfile)
                 return { day, data, stats }
             })
-            
-        setData(data)
-        setStatistics(statistics)
+        return {
+            dailyData,
+            statistics
+        }
     }
 
-    useEffect(() => {
-        load()
-    }, [])
+    const query = useQuery(
+        'reportcard-load', 
+        () => load(),
+        {
+            placeholderData: {
+                dailyData: null,
+                statistics: {
+                    PGS: null,
+                    hba1c: null
+                }
+            },
+        }
+    )
+    const { isLoading, isSuccess, isFetching, data } = query
+    const { dailyData, statistics } = data
 
     function renderPreview() {
         if(previewedDay !== null) {
-            const day = _.find(data, { day: previewedDay })
+            const day = _.find(dailyData, { day: previewedDay })
             if(!day) return <Chart data={[]} />
             return <Chart data={convertData(day.data)} />
         }
@@ -133,12 +138,11 @@ export const ReportCard = ({ userProfile = PROFILE }) => {
             {/* {data === null && <div>
                 <CircularProgress isIndeterminate size="sm" color="green"/> Loading BG's from Nightscout...
             </div>} */}
-
             <ProgressCalendar   
-                loading={data === null}
+                loading={isFetching}
                 {...{
-                    data, previewedDay, selectedDay, hoveredDay, onHoverDay, onSelectDay
-                }}/>
+                    data: dailyData, previewedDay, selectedDay, hoveredDay, onHoverDay, onSelectDay
+                }}/> 
             
             {renderPreview()}
         </Flex>
