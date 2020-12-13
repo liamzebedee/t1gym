@@ -16,6 +16,7 @@ import { Logbook } from '../Logbook';
 import { ReportCard } from '../ReportCard';
 import { ViewLogbookEntry } from "../ViewLogbookEntry";
 import { ViewPatternBank } from "../ViewPatternBank";
+import { ViewOverview } from '../ViewOverview'
 import styles from './index.module.css';
 const history = createHashHistory();
 
@@ -73,18 +74,7 @@ const App = () => {
                         <TabMenu/>
 
                         <Switch>
-                            <Route path="/" exact>
-                                <Box p={5} boxShadow="lg">
-                                    <Heading size="xl">
-                                        How am I tracking?
-                                    </Heading>
-
-                                    <Box pt={5}>
-                                        <ReportCard />
-                                    </Box>
-                                </Box>
-                            </Route>
-
+                            <Route path="/" exact component={ViewOverview}/>
                             <Route path="/logbook" exact component={Logbook} />
                             <Route path='/logbook/entry/:id/' component={ViewLogbookEntry} />
                             <Route path='/beta/view-pattern-bank' component={ViewPatternBank} />
